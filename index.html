@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sportnoten</title>
+<meta name="theme-color" content="#f3f4f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10161c" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sportnoten">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<style>
+@font-face{font-family:'Albert Sans';font-style:normal;font-weight:300;font-display:swap;src:url(fonts/albert-sans-latin-300-normal.woff2) format('woff2')}
+@font-face{font-family:'Albert Sans';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/albert-sans-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Albert Sans';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/albert-sans-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Albert Sans';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/albert-sans-latin-600-normal.woff2) format('woff2')}
+</style>
+<style>
+/* Layout: eine Spalte am Handy, ab iPad-Breite Schülerliste links + Bewertung rechts. Hallenboden-Grau, Linienblau als Akzent, Linien-Gelb als Markierung. */
+:root{
+  --bg:#f3f4f1; --surface:#ffffff; --ink:#15212b; --muted:#5a6771; --line:#d8dcd6; --chip:#eceee9;
+  --accent:#1c5bc9; --accent-ink:#ffffff; --mark:#f0c020;
+  --good:#1d8148; --mid:#9a6a00; --bad:#bf3626;
+  --good-bg:#e3f2e8; --mid-bg:#fbf1d9; --bad-bg:#f8e2de;
+  --font-display:'Albert Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-body:'Albert Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10161c; --surface:#18212a; --ink:#e6ebee; --muted:#9ba8b2; --line:#2b3743; --chip:#212d38;
+    --accent:#5c94f2; --accent-ink:#0c1218; --mark:#e3b622;
+    --good:#5cc68a; --mid:#e0b04a; --bad:#f07a68;
+    --good-bg:#17342a; --mid-bg:#3a3018; --bad-bg:#3e221e;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10161c; --surface:#18212a; --ink:#e6ebee; --muted:#9ba8b2; --line:#2b3743; --chip:#212d38;
+  --accent:#5c94f2; --accent-ink:#0c1218; --mark:#e3b622;
+  --good:#5cc68a; --mid:#e0b04a; --bad:#f07a68;
+  --good-bg:#17342a; --mid-bg:#3a3018; --bad-bg:#3e221e;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+#app{max-width:1100px;margin:0 auto;padding:16px 16px 48px}
+h1,h2,h3{font-family:var(--font-display);font-weight:700;letter-spacing:.01em;margin:0;text-wrap:balance}
+h1{font-size:2rem;text-transform:uppercase;line-height:1}
+h2{font-size:1.5rem;line-height:1.1}
+h3{font-size:1.15rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+p{margin:0}
+.hint{color:var(--muted);font-size:.92rem}
+.num{font-variant-numeric:tabular-nums}
+
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;min-height:44px}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button.ghost{background:transparent;border-color:transparent;color:var(--accent);padding:8px 10px}
+button.danger{color:var(--bad)}
+button.armed{background:var(--bad);border-color:var(--bad);color:#fff;font-weight:600}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+input,select,textarea{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;width:100%}
+textarea{min-height:140px;resize:vertical}
+label{display:grid;gap:6px;font-weight:600;font-size:.95rem}
+
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:3px solid var(--mark);margin-bottom:16px}
+.masthead .sub{color:var(--muted);font-size:.95rem}
+.pill{display:inline-block;font-size:.78rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:999px;background:var(--chip);color:var(--muted)}
+.notice{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--mark);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:.93rem}
+.notice p{max-width:65ch}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stack{display:grid;gap:12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:14px}
+
+.cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px}
+.card .meta{color:var(--muted);font-size:.92rem}
+
+.topbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.topbar h1{font-size:1.7rem}
+.tabs{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--bg);padding:6px 0 10px;margin-bottom:6px}
+.tabs button{border-radius:10px;font-weight:600;font-size:.95rem;padding:8px 4px}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.chips button{white-space:nowrap;border-radius:999px}
+.chips button.sel{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+
+.progress{display:grid;gap:6px}
+.bar{height:8px;background:var(--chip);border-radius:999px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--accent)}
+
+.rate-layout{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+.rate-layout .panel.rating{order:-1}
+@media (min-width:820px){
+  .rate-layout{grid-template-columns:300px minmax(0,1fr);align-items:start}
+  .rate-layout .panel.rating{order:0;position:sticky;top:64px}
+}
+.students{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+@media (min-width:820px){.students{grid-template-columns:1fr}}
+.stu{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;border-left-width:5px}
+.stu .val{font-variant-numeric:tabular-nums;font-weight:600;font-size:.9rem;color:var(--muted)}
+.stu.done{border-left-color:var(--good)}
+.stu.partial{border-left-color:var(--mid)}
+.stu.away{border-left-color:var(--line);color:var(--muted)}
+.stu.cur{outline:2px solid var(--accent);outline-offset:-1px;background:var(--chip)}
+
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.result{font-family:var(--font-display);font-weight:700;font-size:2.3rem;line-height:1;padding:6px 12px;border-radius:10px;font-variant-numeric:tabular-nums;background:var(--chip)}
+.result small{display:block;font-family:var(--font-body);font-weight:500;font-size:.75rem;color:var(--muted);text-align:right}
+.tone-good{background:var(--good-bg);color:var(--good)}
+.tone-mid{background:var(--mid-bg);color:var(--mid)}
+.tone-bad{background:var(--bad-bg);color:var(--bad)}
+
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--chip);padding:4px;border-radius:12px}
+.seg button{border:none;background:transparent;font-weight:600}
+.seg button.sel{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+
+.crit{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.crit-head{display:flex;justify-content:space-between;gap:8px;font-weight:600}
+.crit-head .w{color:var(--muted);font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.scale{display:grid;gap:6px}
+.scale-note{grid-template-columns:repeat(6,1fr)}
+.scale-punkte{grid-template-columns:repeat(8,1fr)}
+.scale button{padding:8px 0;font-weight:600;font-variant-numeric:tabular-nums;min-height:46px}
+.scale-note button{min-height:58px;font-size:1.35rem;font-family:var(--font-display)}
+.scale button.half{color:var(--muted);font-weight:500}
+.scale button.sel{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.away-msg{padding:18px;text-align:center;color:var(--muted);background:var(--chip);border-radius:12px}
+.actions{display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.actions .toggle{color:var(--muted);font-weight:600}
+.actions .toggle.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chips button.add{border-style:dashed;color:var(--accent);font-weight:600}
+button.small{min-height:32px;padding:4px 6px;font-size:.9rem}
+.tpl-list{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.tpl-list button{text-align:left;font-weight:600}
+
+.crit-edit{display:grid;grid-template-columns:minmax(0,1fr) 140px 44px;gap:6px;align-items:center}
+@media (max-width:480px){.crit-edit{grid-template-columns:minmax(0,1fr) 44px}.crit-edit select{grid-column:1;grid-row:2}.crit-edit button{grid-row:1 / span 2;align-self:stretch}}
+.crit-edit .tools{display:flex;gap:4px}
+.crit-edit .tools button{min-width:40px;padding:8px}
+.share{grid-column:1 / -1;display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted);margin-top:-2px}
+.share .bar{flex:1;height:6px}
+.crit-edit-wrap{display:grid;gap:12px}
+
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:24px;display:grid;gap:10px;justify-items:start}
+
+.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-family:var(--font-display);font-size:1rem;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+th small{display:block;font-family:var(--font-body);text-transform:none;letter-spacing:0;font-size:.75rem}
+td.c,th.c{text-align:center}
+td .tag{display:inline-block;padding:2px 8px;border-radius:6px;font-weight:600}
+td.total{font-weight:700}
+tfoot td{font-weight:600;color:var(--muted);border-bottom:none}
+.toast{color:var(--good);font-weight:600}
+.error{color:var(--bad);font-weight:600;max-width:65ch}
+
+.filebtn{position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 16px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:600;cursor:pointer;width:max-content}
+.filebtn input{position:absolute;inset:0;opacity:0;width:100%;height:100%;min-height:0;cursor:pointer}
+.filebtn:focus-within{outline:3px solid var(--mark);outline-offset:2px}
+.imp-info{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.92rem;color:var(--muted)}
+.imp-info strong{color:var(--ink)}
+.imp-opts{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.imp-opts label{flex:1 1 200px}
+.check{display:flex!important;align-items:center;gap:10px;font-weight:500}
+.check input{width:22px;height:22px;min-height:0;flex:none;accent-color:var(--accent)}
+.imp-list{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.imp-row{display:flex!important;align-items:center;gap:10px;font-weight:500;padding:8px 12px;border:1px solid var(--line);border-radius:10px;min-height:46px;background:var(--surface)}
+.imp-row input{width:22px;height:22px;min-height:0;flex:none;accent-color:var(--accent)}
+.imp-row.off{opacity:.5}
+#pdf-import{scroll-margin-top:72px}
+.imp-actions{position:sticky;bottom:0;background:var(--surface);padding:10px 0 4px;border-top:1px solid var(--line)}
+.imp-row small{margin-left:auto;color:var(--mid);font-size:.76rem;text-align:right}
+
+
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.year{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 14px}
+.year.open{padding-bottom:14px}
+.year.drop{outline:3px dashed var(--accent);outline-offset:2px}
+.year-head{display:flex;align-items:center;gap:10px;width:100%;border:none;background:transparent;font-family:var(--font-display);font-size:1.5rem;font-weight:700;padding:10px 0;text-align:left}
+.year-head .chev{width:1em;color:var(--accent)}
+.year-head .count{margin-left:auto;font-family:var(--font-body);font-size:.9rem;color:var(--muted);font-weight:500}
+.year-body{display:grid;gap:12px}
+.year .card{background:var(--bg)}
+.course-card{display:flex;align-items:center;gap:10px;cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;transition:border-color .15s,box-shadow .15s}
+.course-card:hover{border-color:var(--accent)}
+.course-card:active{background:var(--chip)}
+.course-card:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+.cc-main{flex:1;min-width:0;display:grid;gap:4px}
+.cc-side{display:flex;align-items:center;gap:6px}
+.cc-side .danger{min-height:36px;min-width:36px;padding:4px 8px;border-color:transparent;background:transparent;color:var(--muted)}
+.cc-side .danger:hover{color:var(--bad)}
+.cc-side .danger.armed{background:var(--bad);color:#fff}
+.chev-r{font-size:1.8rem;line-height:1;color:var(--muted)}
+.course-card.dragging{opacity:.35}
+.drag-ghost{position:fixed;z-index:50;pointer-events:none;margin:0;box-shadow:0 12px 30px rgba(0,0,0,.25);transform:rotate(-1.5deg) scale(1.02);background:var(--surface)!important}
+.year.drop{outline:3px dashed var(--accent);outline-offset:2px;background:var(--chip)}
+.newcourse{display:flex;flex-wrap:wrap;gap:8px;align-items:end;padding-top:12px;border-top:1px solid var(--line)}
+.tpl-list button small{display:block;font-weight:400;color:var(--muted);font-size:.82rem}
+.meas{display:grid;gap:6px;padding-top:12px;border-top:1px solid var(--line)}
+.meas label{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:1rem}
+.meas label .w{color:var(--muted);font-weight:500;font-size:.82rem}
+.meas-row{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:8px;align-items:stretch}
+.meas-row input{font-size:1.35rem;font-weight:600;font-variant-numeric:tabular-nums;min-height:52px}
+.meas-res{display:flex;flex-direction:column;justify-content:center;align-items:center;border-radius:10px;background:var(--chip);font-family:var(--font-display);font-size:1.25rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;padding:4px 6px;text-align:center}
+.meas-res small{font-family:var(--font-body);font-size:.75rem;font-weight:500;opacity:.85}
+.meas-res .muted{color:var(--muted)}
+.meas-res.bad-input{background:var(--bad-bg);color:var(--bad)}
+.meas-res.tone-good{background:var(--good-bg)}
+.meas-res.tone-mid{background:var(--mid-bg)}
+.meas-res.tone-bad{background:var(--bad-bg)}
+details.thr summary{cursor:pointer;color:var(--accent);font-size:.88rem;width:max-content}
+.thr-grid{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.85rem;color:var(--muted);padding-top:6px;font-variant-numeric:tabular-nums}
+.disc-list{display:grid;gap:6px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.source{font-size:.82rem;color:var(--muted);max-width:70ch}
+
+.ic{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;display:block}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:8px 10px}
+.icon-btn.ghost{background:transparent;border-color:transparent;color:var(--ink)}
+.icon-btn.ghost:hover{background:var(--chip)}
+.icon-btn.small{min-height:36px;min-width:36px;padding:4px 6px}
+.icon-btn.small .ic{width:20px;height:20px}
+.icon-btn.big .ic{width:26px;height:26px}
+.icon-btn.big{min-width:56px;min-height:52px;color:var(--accent)}
+.icon-btn.danger{color:var(--muted)}
+.icon-btn.danger:hover{color:var(--bad);border-color:var(--bad)}
+.icon-btn.armed{background:var(--bad);border-color:var(--bad);color:#fff}
+.icon-btn .q{font-weight:700}
+.icon-btn:disabled{opacity:.4;cursor:default}
+.icon-btn.next .ic{width:28px;height:28px}
+.push{margin-left:auto}
+.topbar h1{flex:0 1 auto;text-transform:none}
+.course-card h2{text-transform:none}
+.tabs button{display:flex;align-items:center;justify-content:center}
+.tabs button .ic{width:26px;height:26px}
+.year-head .chev{width:auto;color:var(--accent)}
+.year-head .chev .ic{width:26px;height:26px}
+.sport{width:44px;height:44px;border-radius:12px;background:var(--surface);color:var(--accent);display:grid;place-items:center;flex:none;border:1px solid var(--line)}
+.sport .ic{width:26px;height:26px}
+.sport.empty{visibility:hidden;width:0;border:0;margin-right:-10px}
+.chips button{display:inline-flex;align-items:center;gap:6px}
+.chips .chip-ic{width:18px;height:18px}
+.chips .icon-btn.add{border-style:dashed;color:var(--accent);border-radius:999px;min-width:44px}
+.tpl-list button{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center}
+.tpl-list button small{grid-column:2}
+.tpl-ic{width:26px;height:26px;color:var(--accent);grid-row:span 2}
+.filebtn{gap:8px;padding:10px 14px}
+.filebtn .ic{width:24px;height:24px}
+.nc-title{flex-basis:100%}
+.letters{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.letter{position:relative;display:inline-flex!important;align-items:center;justify-content:center;min-width:44px;height:44px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-family:var(--font-display);font-size:1.25rem;font-weight:700;cursor:pointer}
+.letter input[type=checkbox]{position:absolute;opacity:0;inset:0;width:100%;height:100%;min-height:0;margin:0;cursor:pointer}
+.letter:has(input:checked){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.letter:has(input:focus-visible){outline:3px solid var(--mark);outline-offset:2px}
+.letter.add{border-style:dashed;color:var(--accent)}
+.letter.add input{width:44px;height:44px;min-height:0;border:none;background:transparent;text-align:center;font:inherit;color:inherit;padding:0}
+.letter.add input::placeholder{color:var(--accent);opacity:1}
+.course-edit{gap:12px}
+
+.undo-bar{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:12px;background:var(--ink);color:var(--bg);border-radius:14px;padding:6px 8px 6px 16px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-weight:600;max-width:calc(100% - 32px)}
+.icon-btn.inv{color:var(--bg)}
+.icon-btn.inv:hover{background:rgba(255,255,255,.12)}
+.trash-zone{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:45;display:flex;align-items:center;justify-content:center;gap:10px;height:72px;border:2px dashed var(--bad);border-radius:16px;background:var(--bad-bg);color:var(--bad);font-weight:600;transition:transform .12s,background .12s}
+.trash-zone .ic{width:28px;height:28px}
+.trash-zone.drop{background:var(--bad);color:#fff;transform:scale(1.03)}
+.status-menu{position:fixed;z-index:70;min-width:180px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.22);padding:6px;display:grid;gap:2px}
+.status-menu .sm-title{font-size:.8rem;color:var(--muted);padding:6px 10px 4px}
+.status-menu button{border:none;background:transparent;text-align:left;font-weight:600;border-radius:10px}
+.status-menu button:hover{background:var(--chip)}
+.status-menu button.on{background:var(--ink);color:var(--bg)}
+.stu{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.inline-edit{border:1px solid transparent;background:transparent;padding:4px 6px;margin:-4px -6px;min-height:0;border-radius:8px;font:inherit;color:inherit;width:100%;font-weight:600}
+.inline-edit:hover{border-color:var(--line)}
+.inline-edit:focus{border-color:var(--accent);background:var(--surface);outline:none}
+.inline-title{font-family:var(--font-display);font-size:1.45rem;font-weight:700;flex:1;min-width:0}
+.crit-head .inline-edit{flex:1;min-width:0}
+.linkish{border:none;background:transparent;color:var(--accent);font-weight:600;padding:8px 0 0;min-height:0;text-decoration:underline}
+.actions{grid-template-columns:auto 1fr auto!important;align-items:center}
+.actions .next{min-width:96px}
+.swipe-hint{text-align:center;font-size:.8rem}
+@media (pointer:fine){.swipe-hint{visibility:hidden}}
+.pill.now{background:var(--accent);color:var(--accent-ink);margin-left:4px;font-family:var(--font-body)}
+.panel.rating{scroll-margin-top:76px;touch-action:pan-y}
+html,body{overscroll-behavior-x:none}
+td.jump{cursor:pointer}
+td.jump:hover{background:var(--chip)}
+@keyframes slideL{from{transform:translateX(28px);opacity:.3}to{transform:none;opacity:1}}
+@keyframes slideR{from{transform:translateX(-28px);opacity:.3}to{transform:none;opacity:1}}
+.slide-left{animation:slideL .22s ease-out}
+.slide-right{animation:slideR .22s ease-out}
+
+.palette{position:sticky;top:0;z-index:20;display:flex;gap:8px;overflow-x:auto;padding:10px 2px 12px;margin:0 -2px 6px;background:var(--bg);touch-action:pan-x;scrollbar-width:none}
+.palette::-webkit-scrollbar{display:none}
+.pal-item{flex:none;width:52px;height:52px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--accent);display:grid;place-items:center;cursor:grab;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.pal-item .ic{width:28px;height:28px}
+.pal-item.dragging{opacity:.35}
+.badges{display:flex;flex-wrap:wrap;gap:6px;min-height:36px;align-items:center}
+.badge{width:36px;height:36px;border-radius:10px;background:var(--surface);border:1px solid var(--line);color:var(--accent);display:grid;place-items:center;-webkit-touch-callout:none}
+.badge .ic{width:22px;height:22px}
+.badge.dragging{opacity:.3}
+.small-hint{font-size:.82rem}
+.course-card.drop{outline:3px dashed var(--accent);outline-offset:2px;background:var(--chip)}
+.drag-ghost.ghost-sport,.drag-ghost.ghost-badge{border-radius:14px;transform:scale(1.25)}
+.sportbar{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 10px;scrollbar-width:none}
+.sportbar::-webkit-scrollbar{display:none}
+.sp{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;border-radius:14px;padding:8px 10px;color:var(--accent)}
+.sp .ic{width:26px;height:26px}
+.sp.sel{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700;padding-right:14px}
+.sportbar .add{border-style:dashed;color:var(--accent);border-radius:14px;min-height:48px}
+.sp-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}
+.sp-tile{display:grid;justify-items:center;gap:6px;padding:12px 6px;border-radius:14px;color:var(--ink);font-size:.85rem;font-weight:600;text-align:center}
+.sp-tile .ic{width:30px;height:30px;color:var(--accent)}
+.sp-tile.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.sp-tile.on .ic{color:var(--accent-ink)}
+th .th-ic{display:flex;justify-content:center;color:var(--accent)}
+th .th-ic .ic{width:22px;height:22px}
+
+.flash-bar{padding:12px 18px;pointer-events:none}
+body.is-dragging .undo-bar{display:none}
+@keyframes pop{0%{transform:scale(.4);background:var(--accent);color:var(--accent-ink)}60%{transform:scale(1.25);background:var(--accent);color:var(--accent-ink)}100%{transform:scale(1)}}
+.badge.pop{animation:pop .5s ease-out}
+
+.newcourse{display:flex;flex-wrap:nowrap;gap:8px;align-items:stretch;padding-top:12px;border-top:1px solid var(--line)}
+.course-edit .newcourse{border-top:none;padding-top:0}
+.nc-jg{flex:0 0 84px}
+.nc-jg select{font-family:var(--font-display);font-size:1.3rem;font-weight:700;padding:8px 10px}
+.nc-let{flex:1 1 auto;min-width:0}
+.nc-let input{font-family:var(--font-display);font-size:1.3rem;font-weight:700;letter-spacing:.06em}
+.nc-let input::placeholder{font-family:var(--font-body);font-size:1rem;font-weight:400;letter-spacing:0}
+
+.year-head{touch-action:manipulation;cursor:pointer;min-height:56px;-webkit-tap-highlight-color:transparent;border-radius:10px}
+.year-head:active{background:var(--chip)}
+.year-head .fold{display:grid;place-items:center;width:32px;height:32px;color:var(--muted);transition:transform .18s}
+.year-head .fold .ic{width:20px;height:20px}
+.year-head .fold.open{transform:rotate(90deg)}
+.year-head .count{margin-left:auto}
+
+.note-btn{position:relative;margin-left:auto;padding:6px 8px;min-width:44px}
+.note-btn.on{background:var(--chip)}
+.note-count{position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-size:.72rem;font-weight:700;display:grid;place-items:center}
+.panel-head h2{flex:0 1 auto}
+.notes{display:grid;gap:8px;padding:10px 0 2px;border-top:1px solid var(--line)}
+.note-add{display:flex;gap:8px}
+.note-add input{flex:1;min-width:0}
+.note-list{list-style:none;margin:0;padding:0;display:grid}
+.note-list li{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--line);font-size:.95rem}
+.note-list li:last-child{border-bottom:none}
+.note-date{color:var(--muted);font-size:.85rem;min-width:44px}
+.note-sp{width:20px;color:var(--accent);flex:none}
+.note-sp .ic{width:18px;height:18px}
+.note-text{flex:1;min-width:0;overflow-wrap:anywhere}
+.note-list .icon-btn{min-height:36px;min-width:36px;padding:4px;border-color:transparent;background:transparent}
+.src-link{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:.88rem;font-weight:600;color:var(--accent);text-decoration:none}
+.src-link .ic{width:16px;height:16px}
+.src-link:hover{text-decoration:underline}
+
+/* Typografie: Albert Sans, leicht und ruhig – Hierarchie über Größe statt Gewicht */
+body{font-weight:400;letter-spacing:0}
+h1,h2,h3{font-weight:500;letter-spacing:-.01em;text-transform:none}
+h1{font-size:1.8rem}
+.topbar h1{font-size:1.7rem}
+h2{font-size:1.25rem;line-height:1.2}
+h3{font-size:.95rem;letter-spacing:0;color:var(--muted);font-weight:500}
+.masthead{border-bottom-width:2px}
+.masthead h1{font-size:1.9rem}
+.pill{text-transform:none;letter-spacing:0;font-weight:500;font-size:.8rem}
+button.primary,.tabs button,.sp.sel,.chips button.sel{font-weight:500}
+.result{font-weight:400;letter-spacing:-.01em}
+.scale button{font-weight:300}
+.scale-note button{font-weight:300;font-size:1.4rem}
+.scale button.sel{font-weight:400}
+.meas-res{font-weight:500}
+.meas-row input{font-weight:400}
+.year-head{font-weight:500;font-size:1.35rem}
+th{text-transform:none;letter-spacing:0;font-weight:500;font-size:.9rem}
+.letter{font-weight:400}
+.inline-title{font-weight:500;font-size:1.3rem}
+.nc-jg select,.nc-let input{font-weight:400;letter-spacing:0}
+.status-menu button,.linkish,.src-link,.toast,.error{font-weight:500}
+.undo-bar{font-weight:500}
+.stu .val{font-weight:500}
+td .tag{font-weight:500}
+
+.backup{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.backup-info{display:grid;gap:2px}
+.backup-info strong{font-weight:500}
+.filebtn-plain{position:relative;cursor:pointer;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.filebtn-plain input{position:absolute;inset:0;opacity:0;width:100%;height:100%;min-height:0;cursor:pointer}
+#app{padding-bottom:calc(48px + env(safe-area-inset-bottom))}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+const KEY='sportnoten-prototyp-v3';
+const uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- Offizielle Tabellen (nur Jungen/Schüler) ----------
+   isb: ISB „Empfehlungen zur Einordnung der quantitativen Messergebnisse …“ (2023), Jgst. 5–11, Notengrenzen 1–5 („ab“)
+   ob:  KMBek „Durchführung des Sportunterrichts in den Jgst. 12 und 13 (G9)“ v. 1.8.2022, geändert 6.9.2024,
+        Tabellen Schüler, 16 Zeilen: 1. AA = –,15…1 / 2. AA = 15…1,–
+   Zeiten in Sekunden, Weiten/Höhen in Metern, Ausdauer in Minuten, 12-Min-Lauf in Metern. */
+const TABLES={"isb":{"la":{"11":{"aus_la":[37.0,33.0,29.0,23.0,15.0],"100m":[13.1,13.6,14.4,15.3,16.2],"weit":[5.01,4.64,4.18,3.65,3.07],"hoch":[1.5,1.42,1.32,1.19,1.05],"kugel5":[9.54,8.65,7.55,6.24,4.85],"speer600":[34.0,30.5,26.2,21.1,15.3],"800m":[155.0,165.0,180.0,195.0,220.0],"12min":[2850.0,2650.0,2400.0,2050.0,1650.0]},"10":{"aus_la":[35.0,31.0,27.0,21.0,14.0],"100m":[13.3,14.0,14.8,15.7,16.7],"weit":[4.77,4.4,3.96,3.46,2.92],"hoch":[1.44,1.36,1.25,1.14,1.0],"kugel5":[8.8,7.9,6.9,5.7,4.3],"speer600":[33.0,29.1,24.5,19.2,13.0],"800m":[159.0,171.0,187.0,204.0,232.0],"12min":[2800.0,2600.0,2350.0,2000.0,1600.0]},"9":{"aus_la":[33.0,30.0,25.0,20.0,13.0],"75m":[10.9,11.4,12.1,12.9,13.7],"100m":[13.6,14.3,15.2,16.1,17.1],"weit":[4.53,4.17,3.75,3.27,2.76],"hoch":[1.37,1.29,1.19,1.08,0.95],"kugel4":[9.0,8.1,7.0,5.8,4.5],"wurf200":[47.0,41.5,35.5,28.0,19.0],"800m":[163.0,176.0,196.0,214.0,245.0],"12min":[2750.0,2500.0,2250.0,1950.0,1550.0]},"8":{"aus_la":[30.0,27.0,23.0,18.0,12.0],"75m":[11.1,11.8,12.5,13.3,14.2],"weit":[4.28,3.94,3.53,3.09,2.6],"hoch":[1.3,1.22,1.13,1.02,0.91],"kugel3":[8.12,7.22,6.31,5.21,3.92],"wurf200":[42.0,37.5,32.5,25.5,17.0],"12min":[2700.0,2450.0,2200.0,1900.0,1500.0]},"7":{"aus_la":[27.0,24.0,21.0,16.0,11.0],"50m":[8.0,8.4,8.9,9.6,10.3],"75m":[11.4,12.1,12.9,13.7,14.6],"weit":[4.04,3.71,3.32,2.9,2.44],"hoch":[1.23,1.15,1.07,0.96,0.86],"wurf200":[37.0,33.5,29.0,23.0,14.0],"12min":[2600.0,2400.0,2150.0,1850.0,1450.0]},"6":{"aus_la":[24.0,21.0,18.0,14.0,10.0],"50m":[8.2,8.8,9.3,10.0,10.8],"weit":[3.8,3.47,3.1,2.71,2.29],"hoch":[1.17,1.09,1.0,0.91,0.81],"wurf200":[33.0,29.5,26.0,20.5,12.0]},"5":{"aus_la":[20.0,18.0,15.0,12.0,8.0],"50m":[8.5,9.1,9.7,10.4,11.2],"weit":[3.56,3.24,2.89,2.52,2.13],"hoch":[1.1,1.02,0.94,0.85,0.76],"wurf80":[33.0,28.5,24.0,19.5,14.0]}},"sw":{"11":{"aus_sw":[37.0,33.0,29.0,23.0,15.0],"50br":[46.4,51.5,57.6,65.3,74.7],"50fr":[38.4,42.7,48.1,54.7,63.1],"50rs":[43.7,48.7,54.7,61.8,70.6],"100br":[106.2,117.9,130.9,145.3,161.5],"100fr":[90.1,101.4,114.4,129.3,146.5],"100rs":[102.9,114.9,128.3,143.2,160.0],"400br":[573.3,621.5,676.2,751.0,841.9],"400fr":[524.6,597.3,672.9,755.9,846.0]},"10":{"aus_sw":[35.0,31.0,27.0,21.0,14.0],"50br":[48.1,53.7,60.3,68.2,77.7],"50fr":[40.9,45.9,51.8,58.9,67.5],"50rs":[45.5,51.1,57.5,65.1,74.1],"100br":[111.1,123.9,138.3,154.4,172.5],"100fr":[95.8,108.6,123.0,139.4,158.1],"100rs":[109.2,122.0,135.8,150.8,167.4],"400br":[591.6,642.9,706.4,783.1,876.8],"400fr":[551.1,627.5,707.8,794.9,887.0]},"9":{"aus_sw":[33.0,30.0,25.0,20.0,13.0],"50br":[49.8,55.9,63.0,71.1,80.8],"50fr":[43.5,49.0,55.5,63.0,71.9],"50rs":[47.4,53.4,60.4,68.3,77.6],"100br":[115.9,129.9,145.8,163.4,183.5],"100fr":[101.4,115.7,131.5,149.4,169.6]},"8":{"aus_sw":[30.0,27.0,23.0,18.0,12.0],"50br":[51.5,58.1,65.6,74.1,83.8],"50fr":[46.0,52.1,59.1,67.1,76.2],"50rs":[49.3,55.8,63.3,71.6,81.0],"100br":[120.7,135.9,153.2,172.5,194.5]},"7":{"aus_sw":[27.0,24.0,21.0,16.0,11.0],"50br":[53.2,60.3,68.3,77.0,86.8],"50fr":[48.5,55.3,62.8,71.3,80.6],"50rs":[51.1,58.2,66.1,74.8,84.5]},"6":{"aus_sw":[24.0,21.0,18.0,14.0,10.0],"50br":[54.9,62.5,70.9,79.9,89.8],"50fr":[51.0,58.4,66.5,75.4,85.0],"50rs":[53.0,60.6,69.0,78.1,88.0]},"5":{"aus_sw":[20.0,18.0,15.0,12.0,8.0],"25br":[25.0,27.8,31.3,35.7,41.0],"25fr":[22.0,24.8,28.3,32.7,38.0]}}},"ob":{"la":{"100m":[12.5,12.6,12.7,12.8,12.9,13.1,13.3,13.5,13.7,14.0,14.3,14.6,14.9,15.2,15.5,15.8],"800m":[145.0,147.0,149.0,151.0,154.0,157.0,160.0,164.0,168.0,172.0,176.0,180.0,186.0,192.0,200.0,208.0],"3000m":[669.0,686.0,704.0,722.0,740.0,759.0,779.0,799.0,820.0,841.0,863.0,886.0,909.0,933.0,958.0,983.0],"110h":[17.2,17.6,18.0,18.4,18.9,19.4,19.9,20.4,21.0,21.6,22.2,22.9,23.6,24.3,25.0,25.8],"weit":[5.47,5.4,5.33,5.25,5.17,5.02,4.87,4.72,4.55,4.39,4.21,4.03,3.84,3.64,3.44,3.23],"hoch":[1.63,1.61,1.59,1.57,1.55,1.52,1.49,1.46,1.42,1.38,1.35,1.3,1.25,1.21,1.15,1.1],"kugel6":[9.61,9.39,9.16,8.93,8.7,8.42,8.12,7.81,7.49,7.15,6.8,6.43,6.05,5.64,5.22,4.79],"speer800":[35.1,34.4,33.6,32.6,31.6,30.2,28.8,27.3,25.8,24.1,22.44,20.7,18.8,16.9,14.9,12.7]},"sw":{"50br":[41.1,42.2,43.4,44.7,46.1,47.6,49.3,51.0,53.0,55.0,57.3,59.7,62.4,65.2,68.3,71.7],"50fr":[33.0,33.9,34.8,35.9,37.0,38.2,39.6,41.1,42.7,44.4,46.3,48.4,50.6,53.1,55.8,58.7],"50rs":[38.2,39.3,40.5,41.8,43.2,44.7,46.3,48.0,49.8,51.8,53.9,56.2,58.6,61.2,64.1,67.1],"100br":[92.0,95.0,98.2,101.4,104.8,108.3,111.9,115.6,119.5,123.5,127.6,131.9,136.3,140.9,145.6,150.5],"100fr":[76.0,78.7,81.5,84.5,87.6,90.9,94.3,98.0,101.8,105.9,110.1,114.6,119.3,124.2,129.4,134.9],"100rs":[87.0,90.1,93.3,96.7,100.3,104.0,107.9,112.0,116.3,120.8,125.5,130.4,135.6,141.0,146.6,152.6],"400br":[510.0,525.0,540.0,555.0,570.0,585.0,600.0,615.0,630.0,646.0,665.0,691.5,719.0,747.4,776.7,807.0],"400fr":[429.0,452.0,475.0,498.0,521.0,544.0,567.0,590.0,614.0,638.0,663.0,689.5,717.0,745.4,774.7,805.0]}}};
+
+const DISC={
+  aus_la:{label:'Ausdauer',hint:'Leistung im Bereich Ausdauer, in Minuten',type:'min',hi:true,ph:'z. B. 25'},
+  '50m':{label:'50 m',type:'s',ph:'z. B. 8,7'},
+  '75m':{label:'75 m',type:'s',ph:'z. B. 11,8'},
+  '100m':{label:'100 m',type:'s',ph:'z. B. 13,9'},
+  '110h':{label:'110 m Hürden',type:'s',ph:'z. B. 19,5'},
+  weit:{label:'Weitsprung',type:'jump',hi:true,ph:'z. B. 4,25'},
+  hoch:{label:'Hochsprung',type:'jump',hi:true,ph:'z. B. 1,30'},
+  kugel3:{label:'Kugelstoß 3 kg',type:'m',hi:true,ph:'z. B. 6,40'},
+  kugel4:{label:'Kugelstoß 4 kg',type:'m',hi:true,ph:'z. B. 7,10'},
+  kugel5:{label:'Kugelstoß 5 kg',type:'m',hi:true,ph:'z. B. 7,80'},
+  kugel6:{label:'Kugelstoß 6 kg',type:'m',hi:true,ph:'z. B. 7,50'},
+  wurf80:{label:'Wurf 80 g',type:'m',hi:true,ph:'z. B. 24,50'},
+  wurf200:{label:'Wurf 200 g',type:'m',hi:true,ph:'z. B. 30,00'},
+  speer600:{label:'Speerwurf 600 g',type:'m',hi:true,ph:'z. B. 28,00'},
+  speer800:{label:'Speerwurf 800 g',type:'m',hi:true,ph:'z. B. 27,00'},
+  '800m':{label:'800 m',type:'ms',ph:'z. B. 2:55'},
+  '3000m':{label:'3000 m',type:'ms',ph:'z. B. 12:40'},
+  '12min':{label:'12-Minuten-Lauf',type:'int',hi:true,ph:'z. B. 2400'},
+  aus_sw:{label:'Ausdauer',hint:'Leistung im Bereich Ausdauer, in Minuten',type:'min',hi:true,ph:'z. B. 20'},
+  '25br':{label:'25 m Brust',type:'mst',ph:'z. B. 31,5'},
+  '25fr':{label:'25 m Freistil',type:'mst',ph:'z. B. 28,0'},
+  '50br':{label:'50 m Brust',type:'mst',ph:'z. B. 1:02,5'},
+  '50fr':{label:'50 m Freistil',type:'mst',ph:'z. B. 52,0'},
+  '50rs':{label:'50 m Rücken/Schmetterling',type:'mst',ph:'z. B. 58,4'},
+  '100br':{label:'100 m Brust',type:'mst',ph:'z. B. 2:15,0'},
+  '100fr':{label:'100 m Freistil',type:'mst',ph:'z. B. 1:55,0'},
+  '100rs':{label:'100 m Rücken/Schmetterling',type:'mst',ph:'z. B. 2:05,0'},
+  '400br':{label:'400 m Brust',type:'mst',ph:'z. B. 10:30'},
+  '400fr':{label:'400 m Freistil',type:'mst',ph:'z. B. 9:40'}
+};
+const AREA_LABEL={la:'Leichtathletik',sw:'Schwimmen'};
+const isOber=jg=>jg>=12;
+const scaleOf=c=>isOber(c.jgst)?'punkte':'note';
+const jgLabel=jg=>isOber(jg)?`Q${jg}`:`Jgst. ${jg}`;
+function tableFor(area,jg){return isOber(jg)?TABLES.ob[area]:(TABLES.isb[area][jg]||{});}
+function thresholds(key,jg){
+  if(isOber(jg)) return TABLES.ob.la[key]||TABLES.ob.sw[key]||null;
+  return (TABLES.isb.la[jg]||{})[key]||(TABLES.isb.sw[jg]||{})[key]||null;
+}
+const SRC_URL={
+  isb:'https://www.isb.bayern.de/fileadmin/user_upload/Gymnasium/Faecher/Sport/Leistungserhebungen/2_Empfehlungen_zur_Leistungsbewertung_Sport_fuer_weiterfuehrende_Schulen_2023_Leichtathletik_Schwimmen.pdf',
+  ob:'https://www.gesetze-bayern.de/Content/Document/BayVV_2235_1_1_5_K_13224/true'
+};
+function sourceLink(jg){
+  const ob=isOber(jg);
+  return `<a class="src-link" href="${ob?SRC_URL.ob:SRC_URL.isb}" target="_blank" rel="noopener">${ic('ext')}${ob?'Bekanntmachung Sport 12/13 (Original)':'ISB-Tabelle (Original-PDF)'}</a>`;
+}
+function sourceText(jg){
+  return isOber(jg)
+    ?'Werte: KMBek „Sportunterricht in den Jgst. 12 und 13 (G9)“, Fassung vom 6.9.2024, Tabellen für Schüler'
+    :`Werte: ISB-Empfehlungen zur Leistungsbewertung (2023), Jgst. ${jg}, Jungen. Es sind Empfehlungen, die du nach pädagogischem Ermessen anpassen darfst.`;
+}
+const meets=(v,t,hi)=>hi?v>=t-1e-9:v<=t+1e-9;
+/* Note (1–6) bzw. Punkte (0–15) für einen Messwert */
+function score(key,v,jg,aa){
+  const T=thresholds(key,jg);if(!T||v==null) return null;
+  const hi=!!DISC[key].hi;
+  if(!isOber(jg)){for(let n=0;n<5;n++) if(meets(v,T[n],hi)) return n+1; return 6;}
+  if(aa===2){for(let i=0;i<=14;i++) if(meets(v,T[i],hi)) return 15-i; return 0;}
+  for(let i=1;i<=15;i++) if(meets(v,T[i],hi)) return 16-i; return 0;
+}
+
+
+/* ---------- Icons (eigene Linienzeichnungen, 24er-Raster) ---------- */
+const ICON={
+  trash:'<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>',
+  pencil:'<path d="M16.5 3.5l4 4L8 20H4v-4z"/><path d="M13.5 6.5l4 4"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  left:'<path d="M19 12H5M12 19l-7-7 7-7"/>',
+  right:'<path d="M5 12h14M12 5l7 7-7 7"/>',
+  folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  folderOpen:'<path d="M3 18V7a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v2"/><path d="M3 18l2.6-6.2A1.5 1.5 0 0 1 7 11h14l-2.7 7.1A3 3 0 0 1 15.5 20H5a2 2 0 0 1-2-2z"/>',
+  folderPlus:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10.5v6M9 13.5h6"/>',
+  rate:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2.8h6V4"/><path d="M8.5 13l2.5 2.5 4.5-5"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M18 14.6a6.5 6.5 0 0 1 3.5 5.4"/>',
+  table:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9.5h18M3 15h18M9 4v16"/>',
+  fileUp:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 18v-6M9 14.5l3-3 3 3"/>',
+  copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7"/>',
+  chev:'<path d="M9 5.5l6.5 6.5L9 18.5"/>',
+  save:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',
+  restore:'<path d="M12 15V3M7 8l5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',
+  note:'<path d="M5 3h10l4 4v14H5z"/><path d="M15 3v4h4M8.5 12h7M8.5 16h5"/>',
+  ext:'<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  reload:'<path d="M3 12a9 9 0 1 0 2.7-6.4L3 8"/><path d="M3 3v5h5"/>',
+  all:'<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/>',
+  none:'<rect x="3" y="3" width="18" height="18" rx="3"/>',
+  la:'<circle cx="15.5" cy="4.5" r="2"/><path d="M7.5 9.5l4.5-2.5 3 3.2 3.5 1"/><path d="M12 7l-2.2 6.2 4 3.3-1.3 5"/><path d="M9.8 13.2L7 16.5H3"/>',
+  sw:'<circle cx="16" cy="6" r="2"/><path d="M5 11l5-3 3 3"/><path d="M2 16c2-1.5 3.5-1.5 5 0s3 1.5 5 0 3.5-1.5 5 0 3 1.5 5 0"/><path d="M2 20.5c2-1.5 3.5-1.5 5 0s3 1.5 5 0 3.5-1.5 5 0 3 1.5 5 0"/>',
+  turn:'<path d="M3 4h18M5.5 4v17M18.5 4v17"/><circle cx="12" cy="10.3" r="1.8"/><path d="M10 4l2 4.2 2-4.2M12 12.2v4.3M12 16.5l-2.2 4M12 16.5l2.2 4"/>',
+  beweg:'<circle cx="6.5" cy="7" r="2"/><circle cx="12" cy="3.8" r="2"/><circle cx="17.5" cy="7" r="2"/><path d="M4 20.5c.8-4.2 4-6.5 8-6.5s7.2 2.3 8 6.5"/><path d="M8.5 14.6l-1.5-3M15.5 14.6l1.5-3"/>',
+  gym:'<circle cx="8" cy="4.5" r="2"/><path d="M8 7v6l-3 8M8 13l4 7M8 9.3l5-3"/><path d="M13 6.3c3.5-3 7.5.3 4.5 3.7s-.6 7.3 3.5 6.3"/>',
+  bb:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M5.7 5.6c3.4 3.6 3.4 9.2 0 12.8M18.3 5.6c-3.4 3.6-3.4 9.2 0 12.8"/>',
+  fb:'<circle cx="12" cy="12" r="9"/><path d="M12 7.6l4 2.9-1.5 4.7h-5L8 10.5z"/><path d="M12 7.6V3.2M16 10.5l4.2-1.4M14.5 15.2l2.6 3.6M9.5 15.2l-2.6 3.6M8 10.5L3.8 9.1"/>',
+  hb:'<circle cx="7" cy="5" r="2"/><path d="M7 7.2l1 6-3 7.8M8 13.2l4.2 6.8M7 9.6l-3 2.8M7.8 8.6L13 5.4"/><circle cx="17" cy="4.2" r="2.4"/>',
+  vb:'<circle cx="12" cy="12" r="9"/><path d="M12 3c-2.2 5-1.2 9.2 3 12.2M3.6 9.6c5 1.1 9.1 0 12-4.2M20.9 13.4c-4.6-1.2-8.3.4-11.2 7"/>',
+  ten:'<ellipse cx="9.5" cy="9.5" rx="5.2" ry="6.5" transform="rotate(-45 9.5 9.5)"/><path d="M13.2 13.2l7 7"/><path d="M6.2 9.3l6.5-.1M9.6 6.1l-.1 6.6" transform="rotate(-45 9.5 9.5)"/><circle cx="19" cy="5" r="2"/>',
+  tt:'<circle cx="10" cy="10" r="6.5"/><path d="M14.6 14.6l5.6 5.6"/><circle cx="19.2" cy="4.8" r="1.8"/>',
+  kl:'<path d="M12 3.5l4.8 14H7.2z"/><path d="M9.2 11.5h5.6"/><path d="M4.5 17.5h15v3h-15z"/>',
+  win:'<path d="M12 2.5v19M3.8 7.3l16.4 9.4M3.8 16.7l16.4-9.4"/><path d="M9.6 3.9L12 6.3l2.4-2.4M9.6 20.1L12 17.7l2.4 2.4"/>',
+  bad:'<circle cx="12" cy="19" r="2.5"/><path d="M10.3 17.2L6 4M13.7 17.2L18 4M12 16.5V3.5"/><path d="M6 4c2.5-1.2 9.5-1.2 12 0"/><path d="M7.8 9.5h8.4"/>'
+};
+const ic=(n,cls='')=>`<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ICON[n]||''}</svg>`;
+const ib=(icon,label,attrs='',cls='')=>`<button class="icon-btn ${cls}" title="${esc(label)}" aria-label="${esc(label)}" ${attrs}>${ic(icon)}</button>`;
+const SPORTS=[
+  ['la','Leichtathletik'],['sw','Schwimmen'],['turn','Gerätturnen'],['beweg','Bewegungskünste'],['gym','Gymnastik und Tanz'],
+  ['bb','Basketball'],['fb','Fußball'],['hb','Handball'],['vb','Volleyball'],
+  ['bad','Badminton'],['ten','Tennis'],['tt','Tischtennis'],['kl','Kleine Spiele'],['win','Wintersport']
+];
+const SPORT_LABEL=Object.fromEntries([...SPORTS,['misc','Weitere']]);
+const sportIcon=k=>k==='misc'?'rate':k;
+function sportOf(text){
+  const t=String(text||'').toLowerCase();
+  if(/leichtathletik|sprint|wurf|sprung|staffel/.test(t)) return 'la';
+  if(/schwimm|kraul|brust|rücken/.test(t)) return 'sw';
+  if(/badminton|federball/.test(t)) return 'bad';
+  if(/tischtennis/.test(t)) return 'tt';
+  if(/tennis/.test(t)) return 'ten';
+  if(/basketball/.test(t)) return 'bb';
+  if(/volleyball/.test(t)) return 'vb';
+  if(/handball/.test(t)) return 'hb';
+  if(/fußball|fussball/.test(t)) return 'fb';
+  if(/gymnastik|tanz/.test(t)) return 'gym';
+  if(/bewegungskünste|akrobatik|jonglier/.test(t)) return 'beweg';
+  if(/turnen|reck|barren|boden/.test(t)) return 'turn';
+  if(/kleine spiele/.test(t)) return 'kl';
+  if(/ski|wintersport|eislauf/.test(t)) return 'win';
+  return null;
+}
+/* Sportarten einer Klasse: zugeordnete + solche, zu denen schon Bögen existieren */
+function classSports(c){
+  const list=[...(c.sports||[])];
+  c.sheets.forEach(s=>{const k=sheetSport(s)||'misc';if(!list.includes(k))list.push(k);});
+  return list;
+}
+const sheetsOfSport=(c,k)=>c.sheets.filter(s=>(sheetSport(s)||'misc')===k);
+function sheetSport(s){return s.type==='mess'?s.area:(s.sport!==undefined&&s.sport!==null?s.sport:sportOf(s.title));}
+function courseSport(c){
+  const own=sportOf(c.name);if(own) return own;
+  const counts={};c.sheets.forEach(s=>{const k=sheetSport(s);if(k)counts[k]=(counts[k]||0)+1;});
+  return Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0]||null;
+}
+/* Kursname aus Jahrgangsstufe, Buchstaben und Zusatz */
+function cName(c){
+  const base=(isOber(c.jgst)?'Q':'')+c.jgst+(c.letters||[]).join('');
+  return c.name?`${base} ${c.name}`:base;
+}
+function normCourse(c){
+  if(Array.isArray(c.letters)) return c;
+  const m=String(c.name||'').match(/^\s*Q?(\d{1,2})([a-zA-Z]*)\s*(.*)$/);
+  if(m&&Number(m[1])===c.jgst){c.letters=m[2].toLowerCase().split('').filter(Boolean);c.name=m[3];}
+  else c.letters=[];
+  return c;
+}
+function letterChips(prefix,selected){
+  const letters=[...new Set([...(state.letters||[]),...selected])].sort();
+  return `<div class="letters" role="group" aria-label="Klassenbuchstaben">
+    ${letters.map(l=>`<label class="letter" for="${prefix}-${l}"><input type="checkbox" id="${prefix}-${l}" name="letters" value="${esc(l)}" data-letter="${esc(l)}" ${selected.includes(l)?'checked':''}><span>${esc(l)}</span></label>`).join('')}
+    <label class="letter add" for="${prefix}-new" title="Buchstaben hinzufügen"><input id="${prefix}-new" data-add-letter maxlength="1" autocomplete="off" aria-label="Neuen Klassenbuchstaben hinzufügen" placeholder="+"></label>
+  </div>`;
+}
+
+/* ---------- Eingabe lesen und anzeigen ---------- */
+const num=s=>{const n=parseFloat(String(s).replace(',','.'));return isFinite(n)?n:null;};
+function parseVal(key,text){
+  const t=String(text||'').trim();if(!t) return null;
+  const type=DISC[key].type;let v=null;
+  if(type==='ms'||type==='mst'){
+    if(!/^[\d:.,\s]+$/.test(t)) return null;
+    const p=t.split(/[:.,]/).map(x=>x.trim()).filter(x=>x!=='');
+    if(p.length===3) v=Number(p[0])*60+Number(p[1])+Number('0.'+p[2]);
+    else if(p.length===2){
+      if(type==='mst'&&p[1].length<=1) v=Number(p[0])+Number('0.'+p[1]);
+      else v=Number(p[0])*60+Number(p[1]);
+    }
+    else if(p.length===1){const n=Number(p[0]);v=(type==='ms'&&n<30)?n*60:n;}
+  } else {
+    if(!/^[\d.,\s]+$/.test(t)) return null;
+    v=num(t);
+    if(type==='jump'&&v!=null&&v>=10) v=v/100; // in cm eingegeben
+  }
+  return (v!=null&&isFinite(v)&&v>0)?Math.round(v*100)/100:null;
+}
+function clock(v,dec){
+  const m=Math.floor(v/60+1e-9);let s=v-m*60;
+  let ss=s.toFixed(dec).replace('.',',');if(s<10) ss='0'+ss;
+  return `${m}:${ss}`;
+}
+function fmtVal(key,v,withUnit=true){
+  if(v==null) return '';
+  const type=DISC[key].type;
+  const de=(x,a,b)=>x.toLocaleString('de-DE',{minimumFractionDigits:a,maximumFractionDigits:b});
+  if(type==='s') return de(v,1,2)+(withUnit?' s':'');
+  if(type==='m'||type==='jump') return de(v,2,2)+(withUnit?' m':'');
+  if(type==='int') return de(v,0,0)+(withUnit?' m':'');
+  if(type==='min') return de(v,0,1)+(withUnit?' min':'');
+  if(type==='ms') return clock(v,v%1?1:0)+(withUnit?' min':'');
+  return clock(v,1)+(withUnit?' min':'');
+}
+const scoreLabel=(s,jg)=>s==null?'':(isOber(jg)?`${s} P`:`Note ${s}`);
+
+/* ---------- Bewertungsbögen mit eigenen Kriterien ---------- */
+const TEMPLATES={
+  'Leerer Bogen':[['Kriterium 1',1]],
+  'Badminton: Clear & Drop':[['Ausholbewegung',1],['Treffpunkt vor/über dem Körper',1],['Flugkurve & Länge',2],['Variation Clear/Drop',1]],
+  'Badminton: Spielfähigkeit Doppel':[['Stellungsspiel & Laufwege',2],['Taktisches Verhalten',2],['Schlagrepertoire',1],['Regelkenntnis & Fairness',1]],
+  'Schwimmen: Kraul (Technik)':[['Wasserlage',1],['Armzug',2],['Beinschlag',1],['Atmung',2]]
+};
+const NOTE_VALS=[1,2,3,4,5,6];
+const PUNKTE_VALS=[15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0];
+const WEIGHTS=[[1,'einfach'],[2,'doppelt'],[3,'dreifach']];
+const weightWord=w=>(WEIGHTS.find(x=>x[0]===Number(w))||[0,'×'+w])[1];
+
+function makeSheet(title,tpl,weight){
+  return {id:uid(),type:'krit',sport:sportOf(title),title,weight:weight??1,criteria:tpl.map(([n,w])=>({id:uid(),name:n,weight:w})),ratings:{}};
+}
+function makeMess(area,jg){
+  const discs=Object.keys(tableFor(area,jg));
+  const need=isOber(jg)?(area==='la'?3:2):discs.length;
+  return {id:uid(),type:'mess',area,title:AREA_LABEL[area],weight:1,discs,need,aa:1,ratings:{}};
+}
+const BOYS=['Ben K.','Can Ö.','Elias M.','Emil Z.','Finn H.','Jonas R.','Leon S.','Luis W.','Mats T.','Noah B.','Paul D.','Theo F.'];
+function demo(){
+  const studs=n=>BOYS.slice(0,n).map(name=>({id:uid(),name}));
+  const fillMess=(c,s,count,pattern)=>{
+    c.students.slice(0,count).forEach((st,i)=>{
+      const vals={};
+      s.discs.forEach((k,j)=>{if(pattern&&!pattern(i,j))return;const T=thresholds(k,c.jgst);vals[k]=T[(i+j*2)%(isOber(c.jgst)?12:5)+(isOber(c.jgst)?2:0)];});
+      s.ratings[st.id]={status:'ok',vals};
+    });
+  };
+  // 2026/27
+  const bad={id:uid(),name:'',sports:['bad','vb','la','turn'],letters:['a','b'],jgst:11,students:studs(12),sheets:[]};
+  const s1=makeSheet('Clear & Drop',TEMPLATES['Badminton: Clear & Drop'],1);s1.sport='bad';
+  const pool=[1,2,3,2,4,3,2];
+  bad.students.forEach((st,i)=>{
+    if(i<7){const vals={};s1.criteria.forEach((cr,j)=>{vals[cr.id]=pool[(i*3+j*2)%7]});s1.ratings[st.id]={status:'ok',vals};}
+    if(i===7) s1.ratings[st.id]={status:'befreit',vals:{}};
+  });
+  bad.sheets=[s1];
+  const la7={id:uid(),name:'',sports:['la','sw','bb','turn','gym'],letters:['c','d'],jgst:7,students:studs(10),sheets:[]};
+  const m7=makeMess('la',7);m7.discs=['50m','weit','wurf200','12min'];m7.need=4;
+  fillMess(la7,m7,6);
+  la7.sheets=[m7];
+  const q12={id:uid(),name:'',sports:['sw','bb'],letters:[],jgst:12,students:studs(8),sheets:[]};
+  const mq=makeMess('sw',12);mq.title='Schwimmen 12/1';
+  fillMess(q12,mq,4,(i,j)=>j===(i%2)+1||j===6);
+  q12.sheets=[mq];
+  // 2025/26
+  const sw6={id:uid(),name:'',sports:['sw','kl','turn'],letters:['b'],jgst:6,students:studs(9),sheets:[]};
+  const m6=makeMess('sw',6);fillMess(sw6,m6,9);sw6.sheets=[m6];
+  return {letters:['a','b','c','d','e'],years:[
+    {id:uid(),name:'2026/27',open:true,courses:[bad,la7,q12]},
+    {id:uid(),name:'2025/26',open:false,courses:[sw6]}
+  ]};
+}
+function migrateV2(){
+  try{
+    const raw=localStorage.getItem('sportnoten-prototyp-v2');if(!raw) return [];
+    const old=JSON.parse(raw);
+    return (old.courses||[]).filter(c=>!/\(Demo\)/.test(c.name)).map(c=>{
+      let jg=parseInt(c.name,10);if(!(jg>=5&&jg<=13)) jg=c.scale==='punkte'?12:11;
+      return {...c,jgst:jg,sheets:(c.sheets||[]).map(s=>({...s,type:'krit'}))};
+    });
+  }catch(e){return [];}
+}
+let state;
+try{
+  const raw=localStorage.getItem(KEY);
+  if(raw) state=JSON.parse(raw);
+  else state={letters:['a','b','c','d','e'],years:[]};
+}catch(e){state={letters:['a','b','c','d','e'],years:[]};}
+if(!Array.isArray(state.letters)) state.letters=['a','b','c','d','e'];
+state.years.forEach(y=>y.courses.forEach(c=>{normCourse(c);if(!Array.isArray(c.sports))c.sports=[];c.letters.forEach(l=>{if(!state.letters.includes(l))state.letters.push(l);});}));
+state.letters.sort();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+const ui={editCourse:false,sportId:null,addSport:false,courseId:null,tab:'bewerten',sheetId:null,studentId:null,editSheetId:null,newSheet:false,pending:null,copyText:null,toast:null,imp:null,focusMeas:false};
+let pendingTimer=null;
+
+/* Aktuelles Schuljahr: ab August beginnt ein neues */
+function currentSY(d=new Date()){const y=d.getFullYear(),st=d.getMonth()>=7?y:y-1;return `${st}/${String((st+1)%100).padStart(2,'0')}`;}
+(function ensureCurrentYear(){
+  const cur=currentSY();
+  if(!state.years.some(y=>y.name===cur)){state.years.forEach(y=>{y.open=false;});state.years.push({id:uid(),name:cur,open:true,courses:[]});}
+  save();
+})();
+function allCourses(){return state.years.flatMap(y=>y.courses);}
+function course(){return allCourses().find(c=>c.id===ui.courseId);}
+function yearOf(cid){return state.years.find(y=>y.courses.some(c=>c.id===cid));}
+
+/* ---------- Berechnung ---------- */
+function compute(c,sheet,sid){
+  const r=sheet.ratings[sid];
+  if(!r) return {state:'none'};
+  if(r.status==='fehlt'||r.status==='befreit') return {state:r.status};
+  if(sheet.type==='mess'){
+    const keys=sheet.discs.filter(k=>r.vals?.[k]!=null&&thresholds(k,c.jgst));
+    if(!keys.length) return {state:'none'};
+    const sc=keys.map(k=>score(k,r.vals[k],c.jgst,sheet.aa));
+    const need=Math.max(1,Math.min(sheet.need||1,sheet.discs.length));
+    return {state:keys.length>=need?'done':'partial',value:sc.reduce((a,b)=>a+b,0)/sc.length,n:keys.length,total:need};
+  }
+  let sw=0,sv=0,n=0;
+  for(const cr of sheet.criteria){
+    const v=r.vals?.[cr.id];
+    if(v===undefined||v===null) continue;
+    n++;const w=Number(cr.weight)||0;sw+=w;sv+=v*w;
+  }
+  if(n===0) return {state:'none'};
+  return {state:n===sheet.criteria.length?'done':'partial',value:sw>0?sv/sw:null,n,total:sheet.criteria.length};
+}
+/* Note einer Sportart: gewichteter Schnitt ihrer fertigen Bögen */
+function sportGrade(c,k,sid){
+  let sw=0,sv=0,partial=false,away=null;
+  for(const s of sheetsOfSport(c,k)){
+    const r=compute(c,s,sid);
+    if(r.state==='done'&&r.value!=null){const w=Number(s.weight)||0;sw+=w;sv+=r.value*w;}
+    else if(r.state==='partial') partial=true;
+    else if(r.state==='fehlt'||r.state==='befreit') away=r.state;
+  }
+  return {value:sw>0?sv/sw:null,partial,away};
+}
+/* Gesamtnote: alle Sportarten zählen gleich */
+function overall(c,sid){
+  const vals=classSports(c).map(k=>sportGrade(c,k,sid).value).filter(v=>v!=null);
+  return vals.length?{value:vals.reduce((a,b)=>a+b,0)/vals.length,count:vals.length}:{value:null,count:0};
+}
+function fmt(v,scale){
+  if(v==null||isNaN(v)) return '–';
+  return scale==='punkte'
+    ? v.toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1})+' P'
+    : v.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function tone(v,scale){
+  if(v==null) return '';
+  const n=scale==='punkte'?(17-v)/3:v;
+  return n<=2.5?'tone-good':n<=4.5?'tone-mid':'tone-bad';
+}
+
+/* ---------- Bausteine ---------- */
+function confirmBtn(key,label){
+  return `<button class="icon-btn danger" data-del="${esc(key)}" title="${esc(label)}" aria-label="${esc(label)}">${ic('trash')}</button>`;
+}
+function scaleLabel(c){return isOber(c.jgst)?'Punkte 0–15':'Noten 1–6';}
+function jgSelect(id,name,value){
+  let o='';for(let j=5;j<=13;j++) o+=`<option value="${j}" ${j===value?'selected':''}>${j<=11?'Jgst. '+j:'Q'+j+' (Punkte)'}</option>`;
+  return `<select id="${id}" name="${name}">${o}</select>`;
+}
+function jgShort(id,name,value,attrs=''){
+  let o='';for(let j=5;j<=13;j++) o+=`<option value="${j}" ${j===value?'selected':''}>${j<=11?j:'Q'+j}</option>`;
+  return `<select id="${id}" name="${name}" ${attrs}>${o}</select>`;
+}
+const parseLetters=v=>[...new Set(String(v||'').toLowerCase().replace(/[^a-zäöü]/g,'').split(''))].filter(Boolean).sort();
+function nextYearName(){
+  const starts=state.years.map(y=>parseInt(y.name,10)).filter(n=>n>1900);
+  const s=starts.length?Math.max(...starts)+1:new Date().getFullYear();
+  return `${s}/${String((s+1)%100).padStart(2,'0')}`;
+}
+
+/* ---------- Startseite: Schuljahr-Ordner ---------- */
+/* Klassen in natürlicher Reihenfolge: erst Jahrgangsstufe als Zahl, dann Buchstaben (5a, 5b, 7cd, 11ab, Q12) */
+function sortCourses(list){
+  return [...list].sort((a,b)=>(a.jgst-b.jgst)||(a.letters||[]).join('').localeCompare((b.letters||[]).join(''),'de')||String(a.name||'').localeCompare(String(b.name||''),'de',{numeric:true}));
+}
+function backupDue(){
+  if(!allCourses().some(c=>c.students.length)) return false;
+  return !state.lastBackup||Date.now()-state.lastBackup>14*864e5;
+}
+async function doBackup(){
+  const d=new Date().toISOString().slice(0,10);
+  const data=JSON.stringify({app:'sportnoten',version:3,saved:new Date().toISOString(),state},null,1);
+  const name=`sportnoten-sicherung-${d}.json`;
+  const file=new File([data],name,{type:'application/json'});
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Sportnoten-Sicherung'});}
+    else{const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);}
+    state.lastBackup=Date.now();save();flash('Sicherung erstellt');
+  }catch(e){if(e&&e.name!=='AbortError')flash('Sicherung hat nicht geklappt');}
+  render();
+}
+async function doRestore(f){
+  try{
+    const obj=JSON.parse(await f.text());
+    const st=obj&&obj.app==='sportnoten'?obj.state:null;
+    if(!st||!Array.isArray(st.years)) throw new Error('format');
+    const snap=JSON.stringify(state);
+    state=st;if(!Array.isArray(state.letters))state.letters=['a','b','c','d','e'];
+    state.years.forEach(y=>y.courses.forEach(c=>{normCourse(c);if(!Array.isArray(c.sports))c.sports=[];}));
+    save();ui.courseId=null;
+    ui.undo={snap,text:'Sicherung geladen'};clearTimeout(undoTimer);undoTimer=setTimeout(()=>{ui.undo=null;render();},10000);
+  }catch(e){flash('Das ist keine Sportnoten-Sicherung');}
+  render();
+}
+function homeView(){
+  const years=[...state.years].sort((a,b)=>b.name.localeCompare(a.name,'de',{numeric:true}));
+  const folders=years.map(y=>{
+    const cards=sortCourses(y.courses).map(c=>`
+      <article class="card course-card" data-action="open-course" data-id="${c.id}" data-drag="${c.id}" data-drop-course="${c.id}" role="button" tabindex="0" aria-label="${esc(cName(c))} öffnen">
+        <div class="cc-main">
+          <h2>${esc(cName(c))}</h2>
+          <div class="badges">${classSports(c).filter(k=>k!=='misc').map(k=>`<span class="badge ${ui.justAdded&&ui.justAdded.cid===c.id&&ui.justAdded.k===k?'pop':''}" data-badge="${k}" data-course="${c.id}" title="${esc(SPORT_LABEL[k])}">${ic(sportIcon(k))}</span>`).join('')||'<span class="hint small-hint">Sportart hierher ziehen</span>'}</div>
+          <p class="meta num">${c.students.length} Schüler</p>
+        </div>
+      </article>`).join('');
+    return `
+    <section class="year ${y.open?'open':''}" data-drop="${y.id}">
+      <button class="year-head" data-action="toggle-year" data-id="${y.id}" aria-expanded="${!!y.open}">
+        <span class="chev" aria-hidden="true">${ic(y.open?'folderOpen':'folder')}</span>${esc(y.name)}${y.name===currentSY()?'<span class="pill now">aktuell</span>':''}<span class="count num">${y.courses.length} ${y.courses.length===1?'Kurs':'Kurse'}</span><span class="fold ${y.open?'open':''}" aria-hidden="true">${ic('chev')}</span>
+      </button>
+      ${y.open?`
+      <div class="year-body">
+        ${cards?`<div class="cards">${cards}</div>`:'<p class="hint">Noch keine Kurse in diesem Schuljahr.</p>'}
+        <form class="newcourse" data-form="new-course" data-year="${y.id}">
+          <label for="nj-${y.id}" class="nc-jg"><span class="sr">Jahrgangsstufe</span>${jgShort('nj-'+y.id,'jgst',state.lastJg||5)}</label>
+          <label for="nl-${y.id}" class="nc-let"><span class="sr">Klassenbuchstaben</span><input id="nl-${y.id}" name="letters" placeholder="Buchstaben, z. B. cd" maxlength="4" autocapitalize="none" autocomplete="off" spellcheck="false"></label>
+          <button class="icon-btn primary" type="submit" title="Klasse anlegen" aria-label="Klasse anlegen">${ic('plus')}</button>
+        </form>
+        ${y.courses.length?'':`<div class="row" style="justify-content:flex-end">${confirmBtn('year:'+y.id,'Leeres Schuljahr löschen')}</div>`}
+      </div>`:''}
+    </section>`;
+  }).join('');
+  return `
+  <header class="masthead">
+    <div><h1>Sportnoten</h1><p class="sub">Daten bleiben auf diesem Gerät</p></div>
+  </header>
+  <div class="palette" aria-label="Sportarten – auf eine Klasse ziehen">
+    ${SPORTS.map(([k,l])=>`<span class="pal-item" data-drag-sport="${k}" title="${esc(l)}" role="img" aria-label="${esc(l)}">${ic(k)}</span>`).join('')}
+  </div>
+  <div class="stack">
+    ${folders||'<p class="hint">Noch kein Schuljahr angelegt.</p>'}
+    <div>${ib('folderPlus','Schuljahr '+nextYearName()+' anlegen','data-action="new-year"','big')}</div>
+    <section class="backup">
+      <div class="backup-info"><strong>Datensicherung</strong><span class="hint">${state.lastBackup?'Zuletzt gesichert: '+new Date(state.lastBackup).toLocaleDateString('de-DE'):'Noch nie gesichert'}${backupDue()?' · bitte sichern':''}</span></div>
+      <div class="row">
+        ${ib('save','Sicherung speichern (Datei)','data-action="backup"',backupDue()?'primary':'')}
+        <label class="icon-btn filebtn-plain" title="Sicherung laden" for="restore-in">${ic('restore')}<span class="sr">Sicherung laden</span><input id="restore-in" type="file" accept="application/json,.json" data-restore></label>
+      </div>
+    </section>
+    ${allCourses().length?'<p class="hint">Sportart oben auf eine Klasse ziehen. Klasse oder Sportart-Symbol gedrückt halten und ziehen: in ein anderes Schuljahr verschieben oder in den Papierkorb.</p>':''}
+  </div>`;
+}
+
+/* ---------- Kursansicht ---------- */
+function courseView(){
+  const c=course();
+  if(!c){ui.courseId=null;return homeView();}
+  const tabs=[['bewerten','Bewerten','rate'],['klasse','Klasse','users'],['noten','Noten','table']];
+  let body='';
+  if(ui.tab==='bewerten') body=tabRate(c);
+  else if(ui.tab==='klasse') body=tabStudents(c);
+  else body=tabOverview(c);
+  const y=yearOf(c.id);
+  return `
+  <div class="topbar">
+    ${ib('left','Zurück zu '+(y?y.name:'Schuljahren'),'data-action="home"','ghost')}
+    <h1>${esc(cName(c))}</h1><span class="pill">${scaleLabel(c)}</span>
+    ${ib(ui.editCourse?'check':'pencil',ui.editCourse?'Fertig':'Kurs bearbeiten','data-action="edit-course"','ghost push')}
+  </div>
+  <nav class="tabs" role="tablist">
+    ${tabs.map(([k,l,i])=>`<button role="tab" aria-selected="${ui.tab===k}" data-action="tab" data-id="${k}" title="${l}" aria-label="${l}">${ic(i)}</button>`).join('')}
+  </nav>
+  ${ui.editCourse?`<section class="panel course-edit">
+    <div class="newcourse">
+      <label for="ce-jg" class="nc-jg"><span class="sr">Jahrgangsstufe</span>${jgShort('ce-jg','jgst',c.jgst,'data-cfield="jgst"')}</label>
+      <label for="ce-let" class="nc-let"><span class="sr">Klassenbuchstaben</span><input id="ce-let" data-cfield="letters" value="${esc((c.letters||[]).join(''))}" placeholder="Buchstaben" maxlength="4" autocapitalize="none" autocomplete="off" spellcheck="false"></label>
+      ${confirmBtn('course:'+c.id,'Klasse löschen')}
+    </div>
+    ${c.name?`<label for="ce-name">Zusatz<input id="ce-name" data-cfield="name" value="${esc(c.name)}"></label>`:''}
+  </section>`:''}
+  ${body}`;
+}
+function empty(title,text,tab,btn){
+  return `<div class="empty"><h2>${esc(title)}</h2><p class="hint">${esc(text)}</p><button class="primary" data-action="tab" data-id="${tab}">${esc(btn)}</button></div>`;
+}
+
+function sportBar(c,sports,sp){
+  return `<div class="sportbar" role="tablist" aria-label="Sportarten">
+    ${sports.map(k=>`<button role="tab" aria-selected="${k===sp}" class="sp ${k===sp?'sel':''}" data-action="pick-sport" data-id="${k}" title="${esc(SPORT_LABEL[k])}" aria-label="${esc(SPORT_LABEL[k])}">${ic(sportIcon(k))}${k===sp?`<span>${esc(SPORT_LABEL[k])}</span>`:''}</button>`).join('')}
+    ${ib(ui.addSport?'x':'plus',ui.addSport?'Schließen':'Sportarten zuordnen','data-action="add-sport-open"','add')}
+  </div>`;
+}
+function sportPicker(c){
+  const have=classSports(c);
+  return `<section class="panel">
+    <h2>Sportarten von ${esc(cName(c))}</h2>
+    <p class="hint">Antippen zum Hinzufügen oder Entfernen. Alle Sportarten zählen gleich in der Gesamtnote.</p>
+    <div class="sp-grid">${SPORTS.map(([k,l])=>`<button class="sp-tile ${have.includes(k)?'on':''}" data-action="toggle-sport" data-id="${k}" aria-pressed="${have.includes(k)}">${ic(k)}<span>${esc(l)}</span></button>`).join('')}</div>
+  </section>`;
+}
+function templatePicker(c,first,sp){
+  const tpls=Object.keys(TEMPLATES).filter(t=>t==='Leerer Bogen'||sportOf(t)===sp);
+  return `
+  <section class="panel">
+    <h2>${first?`Ersten Bogen für ${esc(SPORT_LABEL[sp])} anlegen`:`Neuer Bogen · ${esc(SPORT_LABEL[sp])}`}</h2>
+    ${sp==='la'||sp==='sw'?`<h3>Mit Tabellenwerten · ${jgLabel(c.jgst)}</h3>
+    <div class="tpl-list">
+      <button data-action="new-mess" data-id="${sp}">${ic(sp,'tpl-ic')}${esc(SPORT_LABEL[sp])}<small>Messwert eintragen, ${isOber(c.jgst)?'Punkte':'Note'} kommt automatisch</small></button>
+    </div>`:''}
+    <h3>Mit eigenen Kriterien</h3>
+    <div class="tpl-list">${tpls.map(t=>`<button data-action="new-sheet" data-id="${esc(t)}">${ic(t==='Leerer Bogen'?'pencil':sportIcon(sp),'tpl-ic')}${esc(t==='Leerer Bogen'?'Eigene Kriterien':t.replace(/^.*?:\s*/,''))}</button>`).join('')}</div>
+    ${first?'':`<div>${ib('x','Abbrechen','data-action="new-sheet-cancel"','ghost')}</div>`}
+  </section>`;
+}
+
+function stuState(c,r){
+  if(r.state==='done') return ['done',fmt(r.value,scaleOf(c))];
+  if(r.state==='partial') return ['partial','…'];
+  if(r.state==='fehlt') return ['away','fehlt'];
+  if(r.state==='befreit') return ['away','befreit'];
+  return ['',''];
+}
+function resultHtml(c,cur){
+  if(cur.state==='done') return `<div class="result ${tone(cur.value,scaleOf(c))}">${fmt(cur.value,scaleOf(c))}</div>`;
+  if(cur.state==='partial') return `<div class="result"><small>noch ${cur.total-cur.n} offen</small></div>`;
+  return '';
+}
+function measResHtml(c,sheet,k,v){
+  if(v==null) return '<span class="muted">–</span>';
+  const s=score(k,v,c.jgst,sheet.aa);
+  return `${esc(scoreLabel(s,c.jgst))}<small>${esc(fmtVal(k,v))}</small>`;
+}
+function measTone(c,s){if(s==null)return '';return tone(s,scaleOf(c));}
+function thrHtml(c,sheet,k){
+  const T=thresholds(k,c.jgst);if(!T) return '';
+  const hi=DISC[k].hi?'ab':'bis';
+  if(!isOber(c.jgst)) return T.map((t,i)=>`<span>${i+1}: ${hi} ${esc(fmtVal(k,t))}</span>`).join('')+`<span>6: ${DISC[k].hi?'darunter':'langsamer'}</span>`;
+  const rows=[];
+  if(sheet.aa===2){for(let i=0;i<=14;i++) rows.push([15-i,T[i]]);}
+  else{for(let i=1;i<=15;i++) rows.push([16-i,T[i]]);}
+  return rows.map(([p,t])=>`<span>${p} P: ${hi} ${esc(fmtVal(k,t))}</span>`).join('')+`<span>0 P: ${DISC[k].hi?'darunter':'langsamer'}</span>`;
+}
+
+function tabRate(c){
+  if(!c.students.length) return empty('Noch keine Schüler','Lies die Klassenliste als PDF ein oder tippe die Namen ein.','klasse','Klasse anlegen');
+  if(ui.editSheetId){
+    const s=c.sheets.find(x=>x.id===ui.editSheetId);
+    if(s) return s.type==='mess'?messEditor(c,s):sheetEditor(c,s);
+    ui.editSheetId=null;
+  }
+  const sports=classSports(c);
+  if(!sports.length) return sportPicker(c);
+  const sp=sports.includes(ui.sportId)?ui.sportId:sports[0];ui.sportId=sp;
+  const bar=sportBar(c,sports,sp);
+  if(ui.addSport) return bar+sportPicker(c);
+  const sheets=sheetsOfSport(c,sp);
+  if(!sheets.length) return bar+templatePicker(c,true,sp);
+  if(ui.newSheet) return bar+templatePicker(c,false,sp);
+
+  const sheet=sheets.find(s=>s.id===ui.sheetId)||sheets[0]; ui.sheetId=sheet.id;
+  const stu=c.students.find(s=>s.id===ui.studentId)||c.students[0]; ui.studentId=stu.id;
+  const res=c.students.map(s=>[s,compute(c,sheet,s.id)]);
+  const finished=res.filter(([,r])=>r.state==='done'||r.state==='fehlt'||r.state==='befreit').length;
+  const pct=Math.round(finished/c.students.length*100);
+  const list=res.map(([s,r])=>{const [cls,val]=stuState(c,r);
+    return `<button class="stu ${cls} ${s.id===stu.id?'cur':''}" data-action="pick-student" data-id="${s.id}" data-stu="${s.id}"><span>${esc(s.name)}</span><span class="val">${val}</span></button>`;}).join('');
+  const key=sheet.id+'|'+stu.id;
+  if(ui.doneKey!==key){ui.doneKey=key;ui.wasDone=compute(c,sheet,stu.id).state==='done';}
+
+  const r=sheet.ratings[stu.id]||{status:'ok',vals:{}};
+  const status=r.status||'ok';
+  const cur=compute(c,sheet,stu.id);
+  let body;
+  if(status!=='ok') body=`<div class="away-msg">${status==='fehlt'?'Fehlt heute.':'Vom Sport befreit.'} Zählt nicht in die Note.<br><button class="linkish" data-action="set-status" data-id="${stu.id}" data-v="ok">Doch bewerten</button></div>`;
+  else if(sheet.type==='mess'){
+    body=sheet.discs.filter(k=>thresholds(k,c.jgst)).map((k,i)=>{
+      const v=r.vals?.[k];const s=v!=null?score(k,v,c.jgst,sheet.aa):null;
+      return `
+      <div class="meas">
+        <label for="mv-${k}"><span>${esc(DISC[k].label)}</span>${DISC[k].hint?`<span class="w">${esc(DISC[k].hint)}</span>`:''}</label>
+        <div class="meas-row">
+          <input id="mv-${k}" data-meas="${k}" data-idx="${i}" inputmode="decimal" autocomplete="off" enterkeyhint="next" placeholder="${esc(DISC[k].ph)}" value="${esc(v!=null?fmtVal(k,v,false):'')}">
+          <span class="meas-res ${measTone(c,s)}" data-res="${k}">${measResHtml(c,sheet,k,v)}</span>
+        </div>
+        <details class="thr"><summary>Tabellenwerte</summary><div class="thr-grid">${thrHtml(c,sheet,k)}</div>${sourceLink(c.jgst)}</details>
+      </div>`;}).join('');
+    if(sheet.need<sheet.discs.length) body=`<p class="hint">${sheet.need} von ${sheet.discs.length} Disziplinen pro Schüler.</p>`+body;
+  } else {
+    const vals=isOber(c.jgst)?PUNKTE_VALS:NOTE_VALS;
+    body=sheet.criteria.map(cr=>`
+      <div class="crit">
+        <div class="crit-head"><input class="inline-edit" data-crit-name="${cr.id}" value="${esc(cr.name)}" aria-label="Name des Kriteriums" spellcheck="false">${Number(cr.weight)!==1?`<span class="w">zählt ${weightWord(cr.weight)}</span>`:''}</div>
+        <div class="scale scale-${scaleOf(c)}">
+          ${vals.map(v=>`<button class="${r.vals?.[cr.id]===v?'sel':''}" data-action="rate" data-c="${cr.id}" data-v="${v}" aria-label="${esc(cr.name)}: ${v}">${v}</button>`).join('')}
+        </div>
+      </div>`).join('');
+  }
+  return bar+`
+  <div class="stack">
+    ${sheets.length>1?`<div class="chips" aria-label="Bewertungsbogen wählen">
+      ${sheets.map(s=>`<button class="${s.id===sheet.id?'sel':''}" data-action="pick-sheet" data-id="${s.id}"><span class="chip-label">${esc(s.title)}</span></button>`).join('')}
+    </div>`:''}
+    <div class="progress">
+      <div class="row" style="justify-content:space-between;flex-wrap:nowrap">
+        <input class="inline-edit inline-title" data-sheet-title value="${esc(sheet.title)}" aria-label="Name des Bogens" spellcheck="false">
+        ${ib('pencil','Bogen einrichten (Gewichtung, Disziplinen)',`data-action="edit-sheet" data-id="${sheet.id}"`,'ghost small')}
+        ${ib('plus','Weiteren Bogen für diese Sportart anlegen','data-action="new-sheet-pick"','ghost small')}
+      </div>
+      <div class="row" style="justify-content:space-between"><span class="hint num" id="prog-text">${finished} von ${c.students.length} fertig</span><span class="hint">Name gedrückt halten: fehlt / befreit</span></div>
+      <div class="bar"><span id="prog-bar" style="width:${pct}%"></span></div>
+    </div>
+    <div class="rate-layout">
+      <div class="students" aria-label="Schüler">${list}</div>
+      <section class="panel rating ${ui.slide?'slide-'+ui.slide:''}" data-swipe>
+        <div class="panel-head"><h2>${esc(stu.name)}</h2>${notesBtn(c,stu)}<div id="res-slot">${resultHtml(c,cur)}</div></div>
+        ${ui.notesOpen?notesPanel(c,stu):''}
+        ${body}
+        <div class="actions">
+          ${ib('left','Vorherige Person','data-action="prev"','ghost')}
+          <span class="hint swipe-hint">wischen zum Blättern</span>
+          ${ib('right','Weiter zur nächsten offenen Person','data-action="next-open"','primary next')}
+        </div>
+      </section>
+    </div>
+  </div>`;
+}
+/* Kurze Notizen pro Schüler (gelten für alle Sportarten der Klasse) */
+const notesOf=(c,sid)=>((c.notes||{})[sid]||[]);
+function notesBtn(c,stu){
+  const n=notesOf(c,stu.id).length;
+  return `<button class="icon-btn ghost note-btn ${ui.notesOpen?'on':''}" data-action="toggle-notes" title="Notizen" aria-label="Notizen (${n})" aria-expanded="${!!ui.notesOpen}">${ic('note')}${n?`<span class="note-count num">${n}</span>`:''}</button>`;
+}
+function notesPanel(c,stu){
+  const list=[...notesOf(c,stu.id)].sort((a,b)=>b.d.localeCompare(a.d)||b.ts-a.ts);
+  const dd=d=>{const [y,m,t]=d.split('-');return `${t}.${m}.`;};
+  return `<div class="notes">
+    <div class="note-add">
+      <input id="note-in" data-note-input placeholder="Kurze Notiz …" maxlength="200" autocomplete="off" aria-label="Neue Notiz">
+      ${ib('check','Notiz speichern','data-action="add-note"','primary')}
+    </div>
+    ${list.length?`<ul class="note-list">${list.map(n=>`<li><span class="note-date num">${dd(n.d)}</span>${n.sp&&SPORT_LABEL[n.sp]?`<span class="note-sp" title="${esc(SPORT_LABEL[n.sp])}">${ic(sportIcon(n.sp))}</span>`:'<span class="note-sp"></span>'}<span class="note-text">${esc(n.t)}</span>${confirmBtn('note:'+c.id+':'+stu.id+':'+n.id,'Notiz löschen')}</li>`).join('')}</ul>`:'<p class="hint">Noch keine Notizen.</p>'}
+  </div>`;
+}
+function addNote(c,sid){
+  const inp=document.getElementById('note-in');const t=(inp&&inp.value||'').trim();if(!t) return false;
+  c.notes=c.notes||{};(c.notes[sid]=c.notes[sid]||[]).push({id:uid(),d:new Date().toISOString().slice(0,10),ts:Date.now(),sp:ui.sportId==='misc'?null:ui.sportId,t});
+  save();return true;
+}
+function statusMenuHtml(){
+  const m=ui.statusMenu;if(!m) return '';
+  const c=course();if(!c) return '';
+  const sh=c.sheets.find(x=>x.id===ui.sheetId);const st=c.students.find(x=>x.id===m.sid);if(!sh||!st) return '';
+  const cur=(sh.ratings[st.id]||{}).status||'ok';
+  const x=Math.min(Math.max(12,m.x-90),innerWidth-200),y=Math.min(m.y+10,innerHeight-200);
+  const item=(v,l)=>`<button role="menuitem" class="${cur===v?'on':''}" data-action="set-status" data-id="${st.id}" data-v="${v}">${l}</button>`;
+  return `<div class="status-menu" role="menu" style="left:${x}px;top:${y}px"><div class="sm-title">${esc(st.name)}</div>${item('fehlt','Fehlt')}${item('befreit','Befreit')}${item('ok','Bewerten')}</div>`;
+}
+/* Nach einer Messwert-Eingabe nur die betroffenen Stellen aktualisieren (Fokus bleibt im Feld) */
+function updateLive(c,sheet,sid,k){
+  const r=sheet.ratings[sid];const v=r?.vals?.[k];
+  const el=app.querySelector(`[data-res="${k}"]`);
+  if(el){const s=v!=null?score(k,v,c.jgst,sheet.aa):null;el.className=`meas-res ${measTone(c,s)}`;el.innerHTML=measResHtml(c,sheet,k,v);}
+  const cur=compute(c,sheet,sid);
+  const slot=document.getElementById('res-slot');if(slot) slot.innerHTML=resultHtml(c,cur);
+  const btn=app.querySelector(`.stu[data-id="${sid}"]`);
+  if(btn){const [cls,val]=stuState(c,cur);btn.className=`stu ${cls} cur`;btn.querySelector('.val').textContent=val;}
+  const finished=c.students.filter(s=>['done','fehlt','befreit'].includes(compute(c,sheet,s.id).state)).length;
+  const pt=document.getElementById('prog-text');if(pt) pt.textContent=`${finished} von ${c.students.length} fertig`;
+  const pb=document.getElementById('prog-bar');if(pb) pb.style.width=Math.round(finished/c.students.length*100)+'%';
+}
+
+function weightSelect(field,value,cid,label,id){
+  return `<select id="${id}" data-field="${field}" ${cid?`data-c="${cid}"`:''} aria-label="${esc(label)}">${WEIGHTS.map(([w,l])=>`<option value="${w}" ${Number(value)===w?'selected':''}>zählt ${l}</option>`).join('')}</select>`;
+}
+function editorFoot(s){
+  return `<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:12px">
+      ${confirmBtn('sheet:'+s.id,'Bogen löschen')}
+      ${ib('check','Fertig','data-action="close-edit"','primary')}
+    </div>`;
+}
+function sheetEditor(c,s){
+  return `
+  <section class="panel">
+    <h2>Bogen bearbeiten</h2>
+    <div class="row" style="align-items:end">
+      <label style="flex:3 1 220px" for="sh-title">Titel<input id="sh-title" data-field="sheet-title" value="${esc(s.title)}"></label>
+      <label style="flex:1 1 160px" for="sh-weight">Innerhalb der Sportart${weightSelect('sheet-weight',s.weight,null,'Gewicht des Bogens','sh-weight')}</label>
+    </div>
+    <h3>Kriterien</h3>
+    <div class="crit-edit-wrap">
+    ${s.criteria.map((cr,i)=>`
+      <div class="crit-edit">
+        <input id="cn-${cr.id}" aria-label="Kriterium ${i+1}" data-field="crit-name" data-c="${cr.id}" value="${esc(cr.name)}">
+        ${weightSelect('crit-weight',cr.weight,cr.id,'Gewicht Kriterium '+(i+1),'cw-'+cr.id)}
+        ${ib('trash','Kriterium entfernen',`data-action="crit-del" data-c="${cr.id}" ${s.criteria.length<2?'disabled':''}`,'danger')}
+      </div>`).join('')}
+    </div>
+    <div>${ib('plus','Kriterium hinzufügen','data-action="crit-add"')}</div>
+    ${editorFoot(s)}
+  </section>`;
+}
+function messEditor(c,s){
+  const all=Object.keys(tableFor(s.area,c.jgst));
+  const n=s.discs.length;
+  let needOpts='';for(let i=1;i<=Math.max(1,n);i++) needOpts+=`<option value="${i}" ${s.need===i?'selected':''}>${i===n?`alle ${n}`:i}</option>`;
+  return `
+  <section class="panel">
+    <h2>${esc(AREA_LABEL[s.area])} · ${jgLabel(c.jgst)}</h2>
+    <div class="row" style="align-items:end">
+      <label style="flex:3 1 220px" for="sh-title">Titel<input id="sh-title" data-field="sheet-title" value="${esc(s.title)}"></label>
+      <label style="flex:1 1 160px" for="sh-weight">Innerhalb der Sportart${weightSelect('sheet-weight',s.weight,null,'Gewicht des Bogens','sh-weight')}</label>
+    </div>
+    ${isOber(c.jgst)?`<label for="sh-aa">Anforderung<select id="sh-aa" data-field="sheet-aa">
+        <option value="1" ${s.aa!==2?'selected':''}>1. Ausbildungsabschnitt</option>
+        <option value="2" ${s.aa===2?'selected':''}>2. Ausbildungsabschnitt (erhöht)</option></select></label>`:''}
+    <h3>Disziplinen</h3>
+    <div class="disc-list">${all.map(k=>`<label class="check imp-row" for="dc-${k}"><input type="checkbox" id="dc-${k}" data-disc="${k}" ${s.discs.includes(k)?'checked':''}>${esc(DISC[k].label)}</label>`).join('')}</div>
+    <label for="sh-need" style="max-width:280px">Leistungen pro Schüler<select id="sh-need" data-field="sheet-need" ${n?'':'disabled'}>${needOpts}</select></label>
+    <p class="source">${esc(sourceText(c.jgst))}</p>
+    <div>${sourceLink(c.jgst)}</div>
+    ${editorFoot(s)}
+  </section>`;
+}
+
+function tabStudents(c){
+  return `
+  <div class="stack">
+    ${importPanel(c)}
+    ${ui.toast?`<p class="toast">${esc(ui.toast)}</p>`:''}
+    <section class="panel">
+      <h2>Oder von Hand eintragen</h2>
+      <label for="names">Ein Name pro Zeile<textarea id="names" placeholder="Testname A.&#10;Testname B."></textarea></label>
+      <div>${ib('plus','Namen hinzufügen','data-action="add-students"')}</div>
+    </section>
+    <section class="panel">
+      <h2 class="num">${c.students.length} Schüler</h2>
+      ${c.students.map(s=>`<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px"><input class="inline-edit" data-stu-name="${s.id}" value="${esc(s.name)}" aria-label="Name" spellcheck="false">${confirmBtn('stu:'+s.id,'Schüler entfernen')}</div>`).join('')||'<p class="hint">Noch niemand eingetragen.</p>'}
+    </section>
+  </div>`;
+}
+
+function tabOverview(c){
+  if(!c.students.length||!c.sheets.length) return empty('Noch nichts zu sehen','Sobald Schüler und Bögen angelegt sind, erscheint hier die Notenübersicht.',c.students.length?'bewerten':'klasse',c.students.length?'Bogen anlegen':'Klasse anlegen');
+  const sc=scaleOf(c);
+  const sports=classSports(c).filter(k=>sheetsOfSport(c,k).length);
+  const cell=g=>{
+    if(g.value!=null) return `<span class="tag ${tone(g.value,sc)}">${fmt(g.value,sc)}</span>`;
+    if(g.partial) return '<span class="hint">…</span>';
+    if(g.away) return `<span class="hint">${g.away}</span>`;
+    return '<span class="hint">–</span>';
+  };
+  const rows=c.students.map(s=>{
+    const o=overall(c,s.id);
+    return `<tr><td class="jump" data-action="jump" data-id="${sheetsOfSport(c,sports[0])[0].id}" data-st="${s.id}">${esc(s.name)}</td>${sports.map(k=>`<td class="c jump" data-action="jump" data-id="${sheetsOfSport(c,k)[0].id}" data-st="${s.id}" title="${esc(s.name)} · ${esc(SPORT_LABEL[k])}">${cell(sportGrade(c,k,s.id))}</td>`).join('')}<td class="c total">${o.value!=null?`<span class="tag ${tone(o.value,sc)}">${fmt(o.value,sc)}</span>`:'<span class="hint">–</span>'}</td></tr>`;
+  }).join('');
+  const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
+  const sportAvgs=sports.map(k=>avg(c.students.map(s=>sportGrade(c,k,s.id).value).filter(v=>v!=null)));
+  const totAvg=avg(c.students.map(s=>overall(c,s.id).value).filter(v=>v!=null));
+  return `
+  <div class="stack">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th>${sports.map(k=>`<th class="c" title="${esc(SPORT_LABEL[k])}"><span class="th-ic">${ic(sportIcon(k))}</span><small>${esc(SPORT_LABEL[k])}</small></th>`).join('')}<th class="c">Gesamt</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr><td>Schnitt</td>${sportAvgs.map(v=>`<td class="c">${fmt(v,sc)}</td>`).join('')}<td class="c">${fmt(totAvg,sc)}</td></tr></tfoot>
+      </table>
+    </div>
+    <p class="hint">Zelle antippen springt zur Bewertung. Jede Sportart zählt gleich. Gesamt berücksichtigt nur fertige Bögen; runden entscheidest du.</p>
+    <div class="row">
+      ${ib('copy','Als Tabelle kopieren (für Excel/Numbers)','data-action="copy"','primary')}
+      ${ui.toast?`<span class="toast">${esc(ui.toast)}</span>`:''}
+    </div>
+    ${ui.copyText!=null?`<label for="copybox">Kopieren hat nicht geklappt. Markiere den Text und kopiere ihn von Hand:<textarea id="copybox" readonly>${esc(ui.copyText)}</textarea></label>`:''}
+  </div>`;
+}
+
+function importPanel(c){
+  const imp=ui.imp;
+  let body='';
+  if(imp&&imp.loading) body=`<p class="hint">Lese „${esc(imp.fileName)}“ …</p>`;
+  else if(imp&&imp.error) body=`<p class="error">${esc(imp.error)}</p>`;
+  else if(imp&&imp.rows){
+    const existing=new Set(c.students.map(s=>s.name.toLowerCase()));
+    const rows=imp.rows.map((r,i)=>{
+      const name=fmtName(r,imp.format,imp.firstOnly);
+      const dup=existing.has(name.toLowerCase());
+      return `<label class="imp-row ${r.checked&&!dup?'':'off'}" for="imp-${i}"><input type="checkbox" id="imp-${i}" data-imp-row="${i}" ${r.checked?'checked':''} ${dup?'disabled':''}><span>${esc(name)}</span>${dup?'<small>schon in der Liste</small>':''}</label>`;
+    }).join('');
+    const n=imp.rows.filter(r=>r.checked&&!existing.has(fmtName(r,imp.format,imp.firstOnly).toLowerCase())).length;
+    body=`
+      <div class="imp-info"><span>Datei: <strong>${esc(imp.fileName)}</strong></span><span>Erkannt: <strong class="num">${imp.rows.length} Namen</strong></span><span>Methode: ${esc(imp.method)}</span></div>
+      <p class="hint">Bitte kurz prüfen: Was kein Schülername ist, einfach abhaken.</p>
+      <div class="imp-opts">
+        <label for="imp-format">So sollen die Namen erscheinen
+          <select id="imp-format" data-imp="format">
+            <option value="first-last" ${imp.format==='first-last'?'selected':''}>Vorname Nachname</option>
+            <option value="last-first" ${imp.format==='last-first'?'selected':''}>Nachname, Vorname</option>
+            <option value="first-initial" ${imp.format==='first-initial'?'selected':''}>Vorname + Initial (datensparsam)</option>
+          </select>
+        </label>
+        <label class="check" for="imp-firstonly"><input type="checkbox" id="imp-firstonly" data-imp="firstonly" ${imp.firstOnly?'checked':''}>Nur ersten Vornamen</label>
+      </div>
+      <div class="row">${ib('all','Alle auswählen','data-action="imp-all"')}${ib('none','Keine auswählen','data-action="imp-none"')}</div>
+      <div class="imp-list">${rows}</div>
+      <div class="row imp-actions"><button class="icon-btn primary" data-action="imp-apply" ${n?'':'disabled'} title="${n} Namen übernehmen" aria-label="${n} Namen übernehmen">${ic('check')}<span class="num">${n}</span></button>${ib('x','Verwerfen','data-action="imp-cancel"')}</div>`;
+  }
+  return `
+    <section class="panel" id="pdf-import">
+      <h2>Klassenliste als PDF</h2>
+      <p class="hint">Das PDF wird nur hier im Browser gelesen. Eingescannte Listen gehen nicht.</p>
+      <label class="filebtn" for="pdf-in" title="${imp&&imp.rows?'Anderes PDF wählen':'PDF auswählen'}">${ic('fileUp')}<span class="sr">${imp&&imp.rows?'Anderes PDF wählen':'PDF auswählen'}</span><input id="pdf-in" type="file" accept="application/pdf,.pdf" data-pdf></label>
+      ${body}
+    </section>`;
+}
+
+
+/* ---------- PDF-Import ---------- */
+const PDFJS='vendor/pdfjs/';
+let pdfReady=null;
+function loadScript(src){
+  return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('Skript nicht geladen'));document.head.appendChild(s);});
+}
+function loadPdfJs(){
+  if(!pdfReady){
+    pdfReady=(async()=>{
+      await loadScript(PDFJS+'pdf.min.js');
+      await loadScript(PDFJS+'pdf.worker.min.js'); // läuft im Hauptthread, kein separater Worker nötig
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';
+      return window.pdfjsLib;
+    })().catch(e=>{pdfReady=null;throw e;});
+  }
+  return pdfReady;
+}
+async function pdfLines(file){
+  const lib=await loadPdfJs();
+  const pdf=await lib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+  const out=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p);
+    const tc=await page.getTextContent();
+    const items=tc.items.filter(i=>i.str&&i.str.trim()).map(i=>({s:i.str.replace(/\s+/g,' ').trim(),x:i.transform[4],y:i.transform[5],w:i.width||0}));
+    items.sort((a,b)=>b.y-a.y||a.x-b.x);
+    const lines=[];
+    for(const it of items){
+      const L=lines.find(l=>Math.abs(l.y-it.y)<3);
+      if(L) L.items.push(it); else lines.push({y:it.y,items:[it],page:p});
+    }
+    lines.forEach(l=>l.items.sort((a,b)=>a.x-b.x));
+    out.push(...lines);
+  }
+  return out;
+}
+function joinItems(items){
+  let s='';
+  items.forEach((it,i)=>{
+    if(i>0){const prev=items[i-1];s+=(it.x-(prev.x+prev.w)>1)?' ':'';}
+    s+=it.s;
+  });
+  return s.replace(/\s+/g,' ').trim();
+}
+const norm=s=>s.toLowerCase().replace(/[^a-zäöüß]/g,'');
+const STOP=new Set(['klasse','klassenliste','klassenleitung','schuljahr','seite','stand','gymnasium','schule','realschule','mittelschule','grundschule','liste','teilnehmerliste','schülerliste','kurs','sport','sporthalle','halle','lehrkraft','lehrer','datum','name','vorname','nachname','rufname','familienname','gruppe','stunde','montag','dienstag','mittwoch','donnerstag','freitag','badminton','schwimmen','mädchen','jungen','bemerkung','bemerkungen','geburtsdatum','geschlecht','summe','gesamt','insgesamt','anzahl','schüler','schülerin','schülerinnen','unterschrift','nr','und','oder','ausdruck','export','webuntis','fach','zeugnis']);
+const PARTICLES=new Set(['von','van','de','la','le','del','della','der','den','zu','zur','di','da','dos','el','al','ten','ter','du','bin','ibn']);
+function isNamePart(s){
+  if(!s||s.length<2||s.length>45) return false;
+  if(!/^[\p{L}\p{M}][\p{L}\p{M}'’.\- ]*$/u.test(s)) return false;
+  const words=s.split(' ');
+  if(!words.some(w=>/^\p{Lu}/u.test(w))) return false;
+  if(words.some(w=>!/^\p{Lu}/u.test(w)&&!PARTICLES.has(w))) return false;
+  if(words.some(w=>STOP.has(norm(w)))) return false;
+  return true;
+}
+function splitFull(s,order){
+  if(s.includes(',')){const [a,...b]=s.split(',');return {last:a.trim(),first:b.join(',').trim()};}
+  const w=s.split(' ');
+  if(order==='last-first'){
+    // Nachname kann mit Namenszusatz beginnen (von Bergen)
+    let k=1;while(k<w.length-1&&PARTICLES.has(w[k-1]))k++;
+    return {last:w.slice(0,k).join(' '),first:w.slice(k).join(' ')};
+  }
+  let k=w.length-1;while(k>1&&PARTICLES.has(w[k-1]))k--;
+  return {first:w.slice(0,k).join(' '),last:w.slice(k).join(' ')};
+}
+function extractNames(lines){
+  // 1) Tabellenkopf suchen
+  let header=null,lastCol=-1,firstCol=-1,fullCol=-1,order='first-last';
+  for(const l of lines){
+    const ns=l.items.map(i=>norm(i.s));
+    const li=ns.findIndex(n=>n==='nachname'||n==='familienname'||n==='name');
+    const fi=ns.findIndex(n=>n.startsWith('vorname')||n==='rufname');
+    const lt=norm(joinItems(l.items));
+    if(lt.includes('nachname')&&lt.includes('vorname')&&lt.indexOf('nachname')<lt.indexOf('vorname')) order='last-first';
+    if(li>=0&&fi>=0&&li!==fi){header=l;lastCol=li;firstCol=fi;break;}
+    const ci=ns.findIndex(n=>['namevorname','nachnamevorname','vornamenachname','schülername','schülerin','schülerinschüler','schüler'].includes(n));
+    if(ci>=0){header=l;fullCol=ci;if(ns[ci].startsWith('vorname'))order='first-last';else if(ns[ci].includes('vorname'))order='last-first';break;}
+  }
+  const found=[];const seen=new Set();
+  const add=(first,last)=>{
+    first=first.trim();last=last.trim();
+    if(!isNamePart(first)||!isNamePart(last)) return;
+    const key=(first+'|'+last).toLowerCase();if(seen.has(key))return;seen.add(key);
+    found.push({first,last});
+  };
+  if(header){
+    const starts=header.items.map(i=>i.x-6);
+    const colOf=x=>{let k=0;for(let j=0;j<starts.length;j++)if(x>=starts[j])k=j;return k;};
+    const hText=norm(joinItems(header.items));
+    const startIdx=lines.indexOf(header);
+    for(const l of lines.slice(startIdx+1)){
+      if(norm(joinItems(l.items))===hText) continue; // wiederholter Kopf auf Folgeseiten
+      const cols={};
+      l.items.forEach(it=>{const k=colOf(it.x);(cols[k]=cols[k]||[]).push(it);});
+      const get=k=>cols[k]?joinItems(cols[k]):'';
+      if(fullCol>=0){const t=get(fullCol);if(t){const r=splitFull(t,order);add(r.first,r.last);}}
+      else add(get(firstCol),get(lastCol));
+    }
+    if(found.length) return {rows:found,method:fullCol>=0?'Tabelle mit Namensspalte':'Tabelle mit Spalten Nachname und Vorname'};
+  }
+  // 2) Ohne Tabellenkopf: jede Zeile einzeln prüfen
+  for(const l of lines){
+    let t=joinItems(l.items);
+    t=t.replace(/^\s*\d{1,3}\s*[.)]?\s+/,'');
+    t=t.replace(/\b\d{1,2}\.\d{1,2}\.(\d{2,4})?/g,' ');
+    t=t.split(' ').filter(w=>w&&!/[\d@]/.test(w)&&!/^[a-zäöü]$/.test(w)).join(' ').trim();
+    if(!t) continue;
+    if(t.includes(',')){const r=splitFull(t,order);add(r.first,r.last);continue;}
+    const words=t.split(' ');
+    if(words.length<2||words.length>5) continue;
+    const r=splitFull(t,order);add(r.first,r.last);
+  }
+  return {rows:found,method:'Zeilenweise (kein Tabellenkopf gefunden)'};
+}
+function fmtName(r,format,firstOnly){
+  let first=r.first;
+  if(firstOnly) first=first.split(' ')[0];
+  if(format==='last-first') return `${r.last}, ${first}`;
+  if(format==='first-initial'){
+    const main=r.last.split(' ').find(w=>/^\p{Lu}/u.test(w))||r.last;
+    return `${first} ${main[0]}.`;
+  }
+  return `${first} ${r.last}`;
+}
+async function handlePdf(file){
+  ui.imp={loading:true,fileName:file.name};ui.toast=null;render();
+  try{
+    const lines=await pdfLines(file);
+    if(!lines.length){ui.imp={fileName:file.name,error:'In diesem PDF steht kein lesbarer Text. Vermutlich ist es eingescannt. Scans kann der Prototyp noch nicht lesen.'};}
+    else{
+      const res=extractNames(lines);
+      if(!res.rows.length) ui.imp={fileName:file.name,error:'Im PDF habe ich keine Namen gefunden. Am besten klappt eine Liste mit Spalten „Nachname“ und „Vorname“ oder Zeilen wie „Muster, Max“.'};
+      else ui.imp={fileName:file.name,method:res.method,rows:res.rows.map(r=>({...r,checked:true})),format:'first-last',firstOnly:false};
+    }
+  }catch(err){
+    ui.imp={fileName:file.name,error:err&&/Skript/.test(err.message)?'Der PDF-Leser konnte nicht geladen werden. Bitte Internetverbindung prüfen und nochmal versuchen.':'Das PDF ließ sich nicht öffnen. Ist es passwortgeschützt oder beschädigt?'};
+  }
+  render();
+  const p=document.getElementById('pdf-import');if(p)p.scrollIntoView({block:'start'});
+}
+
+
+/* ---------- Render & Events ---------- */
+const app=document.getElementById('app');
+function cleanupDragArtifacts(){
+  document.body.classList.remove('is-dragging');
+  document.querySelectorAll('.drag-ghost,.trash-zone').forEach(el=>el.remove());
+  document.querySelectorAll('.dragging').forEach(el=>el.classList.remove('dragging'));
+}
+function render(){
+  if(typeof drag!=='undefined'&&drag&&drag.active){ui.renderPending=true;return;}
+  ui.renderPending=false;
+  cleanupDragArtifacts();
+  app.innerHTML=(ui.courseId?courseView():homeView())+undoHtml()+statusMenuHtml();
+  ui.slide=null;
+  if(ui.focusNote){ui.focusNote=false;const f=document.getElementById('note-in');if(f)f.focus();}
+  if(ui.focusMeas){ui.focusMeas=false;const f=app.querySelector('[data-meas]');if(f&&window.matchMedia('(pointer:coarse)').matches===false) f.focus();}
+}
+
+let undoTimer=null,flashTimer=null;
+function flash(text){ui.flash=text;clearTimeout(flashTimer);flashTimer=setTimeout(()=>{ui.flash=null;ui.justAdded=null;render();},2200);}
+const DEL_TEXT={note:'Notiz gelöscht',sport:'Sportart entfernt',wipe:'Alles gelöscht',year:'Schuljahr gelöscht',course:'Kurs gelöscht',sheet:'Bogen gelöscht',stu:'Schüler entfernt'};
+function deleteWithUndo(key){
+  const snap=JSON.stringify(state);
+  const kind=key.split(':')[0];
+  runConfirmed(key);
+  if(kind==='course'&&ui.courseId===key.slice(7)){ui.courseId=null;ui.editCourse=false;}
+  ui.undo={snap,text:DEL_TEXT[kind]||'Gelöscht'};
+  clearTimeout(undoTimer);undoTimer=setTimeout(()=>{ui.undo=null;render();},7000);
+}
+function undoHtml(){
+  if(!ui.undo&&ui.flash) return `<div class="undo-bar flash-bar" role="status"><span>${esc(ui.flash)}</span></div>`;
+  if(!ui.undo) return '';
+  return `<div class="undo-bar" role="status"><span>${esc(ui.undo.text)}</span>${ib('reload','Rückgängig','data-action="undo"','ghost inv')}</div>`;
+}
+function runConfirmed(key){
+  const [kind,id]=key.split(/:(.+)/);
+  if(kind==='note'){
+    const [cid,sid,nid]=id.split(':');const cc=allCourses().find(x=>x.id===cid);
+    if(cc&&cc.notes&&cc.notes[sid]) cc.notes[sid]=cc.notes[sid].filter(n=>n.id!==nid);
+    save();return;
+  }
+  if(kind==='sport'){
+    const [cid,k]=id.split(':');const cc=allCourses().find(x=>x.id===cid);
+    if(cc){cc.sports=(cc.sports||[]).filter(x=>x!==k);cc.sheets=cc.sheets.filter(s=>(sheetSport(s)||'misc')!==k);if(ui.sportId===k)ui.sportId=null;}
+    save();return;
+  }
+  const c=course();
+  if(kind==='wipe'){state={letters:state.letters,years:[{id:uid(),name:currentSY(),open:true,courses:[]}]};}
+  else if(kind==='year'){state.years=state.years.filter(y=>y.id!==id);}
+  else if(kind==='course'){state.years.forEach(y=>y.courses=y.courses.filter(x=>x.id!==id));}
+  else if(kind==='sheet'&&c){c.sheets=c.sheets.filter(x=>x.id!==id);if(ui.sheetId===id)ui.sheetId=null;if(ui.editSheetId===id)ui.editSheetId=null;}
+  else if(kind==='stu'&&c){c.students=c.students.filter(x=>x.id!==id);c.sheets.forEach(s=>delete s.ratings[id]);if(ui.studentId===id)ui.studentId=null;}
+  save();
+}
+function moveCourse(cid,yid){
+  const from=yearOf(cid),to=state.years.find(y=>y.id===yid);
+  if(!from||!to||from===to) return;
+  const c=from.courses.find(x=>x.id===cid);
+  from.courses=from.courses.filter(x=>x.id!==cid);to.courses.push(c);to.open=true;save();
+}
+function goNextOpen(c,sheet){
+  const n=c.students.length,i=c.students.findIndex(s=>s.id===ui.studentId);
+  let target=null;
+  for(let k=1;k<=n;k++){const s=c.students[(i+k)%n];const st=compute(c,sheet,s.id).state;if(st==='none'||st==='partial'){target=s;break;}}
+  ui.studentId=(target||c.students[(i+1)%n]).id;ui.focusMeas=true;ui.slide='left';scrollPanel();
+}
+function goStep(c,dir){
+  const n=c.students.length,i=c.students.findIndex(s=>s.id===ui.studentId);
+  ui.studentId=c.students[(i+dir+n)%n].id;ui.focusMeas=true;ui.slide=dir>0?'left':'right';
+}
+/* Automatisch weiter, sobald eine Person fertig bewertet ist (nicht beim Korrigieren) */
+let autoTimer=null;
+function maybeAutoAdvance(c,sheet,sid,delay){
+  if(ui.wasDone) return;
+  if(compute(c,sheet,sid).state!=='done') return;
+  ui.wasDone=true;clearTimeout(autoTimer);
+  autoTimer=setTimeout(()=>{if(ui.studentId===sid&&ui.sheetId===sheet.id&&ui.tab==='bewerten'&&course()===c){goNextOpen(c,sheet);render();}},delay);
+}
+function scrollPanel(){if(window.innerWidth<820) setTimeout(()=>{const q=document.querySelector('.panel.rating');if(q)q.scrollIntoView({block:'start'});},0);}
+
+app.addEventListener('click',async e=>{
+  if(suppressClick){suppressClick=false;return;}
+  if(ui.statusMenu&&!e.target.closest('.status-menu')){if(Date.now()-(ui.menuAt||0)<700)return;ui.statusMenu=null;render();return;}
+  const del=e.target.closest('[data-del]');
+  if(del){deleteWithUndo(del.dataset.del);render();return;}
+  const b=e.target.closest('[data-action]');
+  if(!b) return;
+  const a=b.dataset.action,id=b.dataset.id,c=course();
+  const sheet=c&&c.sheets.find(s=>s.id===ui.sheetId);
+  ui.toast=null;
+  switch(a){
+    case 'home': ui.courseId=null;ui.editSheetId=null;ui.newSheet=false;ui.imp=null;break;
+    case 'edit-course': ui.editCourse=!ui.editCourse;break;
+    case 'backup': doBackup();return;
+    case 'toggle-notes': ui.notesOpen=!ui.notesOpen;if(ui.notesOpen)ui.focusNote=true;break;
+    case 'add-note': addNote(c,ui.studentId);ui.focusNote=true;break;
+    case 'pick-sport': ui.sportId=id;ui.sheetId=null;ui.newSheet=false;ui.addSport=false;ui.editSheetId=null;break;
+    case 'add-sport-open': ui.addSport=!ui.addSport;break;
+    case 'toggle-sport':{
+      if(classSports(c).includes(id)) deleteWithUndo('sport:'+c.id+':'+id);
+      else{c.sports.push(id);c.sports.sort((a,b)=>SPORTS.findIndex(x=>x[0]===a)-SPORTS.findIndex(x=>x[0]===b));ui.sportId=id;save();}
+      break;}
+    case 'undo': if(ui.undo){state=JSON.parse(ui.undo.snap);save();ui.undo=null;clearTimeout(undoTimer);}break;
+    case 'jump': ui.tab='bewerten';ui.sheetId=id;{const sh=c.sheets.find(x=>x.id===id);if(sh)ui.sportId=sheetSport(sh)||'misc';}ui.addSport=false;ui.studentId=b.dataset.st;ui.editSheetId=null;ui.newSheet=false;window.scrollTo(0,0);break;
+    case 'set-status':{
+      const sh=c.sheets.find(x=>x.id===ui.sheetId);const sid=b.dataset.id;
+      const r=sh.ratings[sid]||(sh.ratings[sid]={status:'ok',vals:{}});
+      r.status=b.dataset.v;ui.statusMenu=null;save();break;}
+    case 'toggle-year':{const y=state.years.find(x=>x.id===id);if(y){y.open=!y.open;save();}break;}
+    case 'new-year':{state.years.forEach(y=>y.open=false);state.years.push({id:uid(),name:nextYearName(),open:true,courses:[]});save();break;}
+    case 'open-course': ui.editCourse=false;ui.addSport=false;ui.sportId=(e.target.closest('[data-badge]')||{dataset:{}}).dataset.badge||null;ui.courseId=id;ui.tab='bewerten';ui.sheetId=null;ui.studentId=null;ui.editSheetId=null;ui.newSheet=false;ui.copyText=null;ui.imp=null;window.scrollTo(0,0);break;
+    case 'reset-demo': state=demo();save();break;
+    case 'tab': ui.addSport=false;ui.tab=id;ui.editSheetId=null;ui.newSheet=false;ui.copyText=null;break;
+    case 'pick-sheet': ui.sheetId=id;break;
+    case 'pick-student': ui.studentId=id;ui.focusMeas=true;scrollPanel();break;
+    case 'rate':{
+      const cid=b.dataset.c,v=Number(b.dataset.v);
+      const r=sheet.ratings[ui.studentId]||(sheet.ratings[ui.studentId]={status:'ok',vals:{}});
+      r.vals=r.vals||{};
+      if(r.vals[cid]===v) delete r.vals[cid]; else r.vals[cid]=v;
+      r.status='ok';save();maybeAutoAdvance(c,sheet,ui.studentId,550);break;}
+    case 'toggle-status':{
+      const r=sheet.ratings[ui.studentId]||(sheet.ratings[ui.studentId]={status:'ok',vals:{}});
+      r.status=r.status===b.dataset.v?'ok':b.dataset.v;save();break;}
+    case 'next-open': goNextOpen(c,sheet);break;
+    case 'prev': goStep(c,-1);break;
+    case 'edit-sheet': ui.editSheetId=id;break;
+    case 'close-edit': ui.editSheetId=null;break;
+    case 'new-sheet-pick': ui.newSheet=true;break;
+    case 'new-sheet-cancel': ui.newSheet=false;break;
+    case 'new-sheet':{
+      const s=makeSheet(id==='Leerer Bogen'?SPORT_LABEL[ui.sportId]||'Neuer Bogen':id.replace(/^.*?:\s*/,''),TEMPLATES[id],1);
+      s.sport=ui.sportId==='misc'?null:ui.sportId;
+      c.sheets.push(s);ui.newSheet=false;ui.editSheetId=s.id;ui.sheetId=s.id;save();break;}
+    case 'new-mess':{
+      const s=makeMess(id,c.jgst);
+      c.sheets.push(s);ui.newSheet=false;ui.editSheetId=s.id;ui.sheetId=s.id;save();break;}
+    case 'crit-add':{
+      const s=c.sheets.find(x=>x.id===ui.editSheetId);
+      const cr={id:uid(),name:'Kriterium '+(s.criteria.length+1),weight:1};
+      s.criteria.push(cr);save();render();
+      const inp=document.getElementById('cn-'+cr.id);if(inp){inp.focus();inp.select();}
+      return;}
+    case 'crit-del':{
+      const s=c.sheets.find(x=>x.id===ui.editSheetId);
+      if(s.criteria.length>1) s.criteria=s.criteria.filter(x=>x.id!==b.dataset.c);
+      save();break;}
+    case 'add-students':{
+      const ta=document.getElementById('names');
+      const names=(ta.value||'').split(/\r?\n/).map(x=>x.replace(/\t.*$/,'').trim()).filter(Boolean);
+      names.forEach(n=>c.students.push({id:uid(),name:n}));save();break;}
+    case 'imp-all': ui.imp.rows.forEach(r=>r.checked=true);break;
+    case 'imp-none': ui.imp.rows.forEach(r=>r.checked=false);break;
+    case 'imp-cancel': ui.imp=null;break;
+    case 'imp-apply':{
+      const existing=new Set(c.students.map(s=>s.name.toLowerCase()));
+      let n=0;
+      ui.imp.rows.forEach(r=>{if(!r.checked)return;const name=fmtName(r,ui.imp.format,ui.imp.firstOnly);if(existing.has(name.toLowerCase()))return;existing.add(name.toLowerCase());c.students.push({id:uid(),name});n++;});
+      ui.imp=null;ui.toast=`${n} Schüler aus dem PDF übernommen.`;save();break;}
+    case 'copy':{
+      const sc=scaleOf(c);
+      const num=v=>v==null?'':(sc==='punkte'?v.toFixed(1):v.toFixed(2)).replace('.',',');
+      const sports=classSports(c).filter(k=>sheetsOfSport(c,k).length);
+      const head=['Name',...sports.map(k=>SPORT_LABEL[k]),'Gesamt'];
+      const lines=[head.join('\t'),...c.students.map(s=>[s.name,...sports.map(k=>num(sportGrade(c,k,s.id).value)),num(overall(c,s.id).value)].join('\t'))];
+      const text=lines.join('\n');
+      try{await navigator.clipboard.writeText(text);ui.toast='Kopiert. In Excel oder Numbers einfügen.';ui.copyText=null;}
+      catch(err){ui.copyText=text;}
+      break;}
+  }
+  render();
+});
+
+app.addEventListener('input',e=>{
+  const t=e.target;const c=course();
+  if(t.dataset.meas){
+    const sheet=c.sheets.find(s=>s.id===ui.sheetId);const k=t.dataset.meas;
+    const r=sheet.ratings[ui.studentId]||(sheet.ratings[ui.studentId]={status:'ok',vals:{}});
+    r.vals=r.vals||{};
+    const v=parseVal(k,t.value);
+    if(v==null){
+      delete r.vals[k];
+      if(t.value.trim()){const el=app.querySelector(`[data-res="${k}"]`);if(el){el.className='meas-res bad-input';el.innerHTML='?<small>Eingabe prüfen</small>';}save();updateProgressOnly(c,sheet);return;}
+    } else r.vals[k]=v;
+    save();updateLive(c,sheet,ui.studentId,k);return;
+  }
+  if(t.matches('[data-sheet-title]')){const sh=c.sheets.find(x=>x.id===ui.sheetId);sh.title=t.value;save();const l=app.querySelector('.chips .sel .chip-label');if(l)l.textContent=t.value;return;}
+  if(t.dataset.critName){const sh=c.sheets.find(x=>x.id===ui.sheetId);const cr=sh&&sh.criteria.find(x=>x.id===t.dataset.critName);if(cr){cr.name=t.value;save();}return;}
+  if(t.dataset.stuName){const st=c.students.find(x=>x.id===t.dataset.stuName);if(st){st.name=t.value;save();}return;}
+  if(t.dataset.cfield==='letters'){c.letters=parseLetters(t.value);save();const h=app.querySelector('.topbar h1');if(h)h.textContent=cName(c);return;}
+  if(t.dataset.cfield==='name'){c.name=t.value;save();const h=app.querySelector('.topbar h1');if(h)h.textContent=cName(c);return;}
+  const f=t.dataset.field;if(!f) return;
+  const s=c&&c.sheets.find(x=>x.id===ui.editSheetId);if(!s) return;
+  if(f==='sheet-title') s.title=t.value;
+  if(f==='crit-name'){const cr=s.criteria.find(x=>x.id===t.dataset.c);if(cr)cr.name=t.value;}
+  save();
+});
+function updateProgressOnly(c,sheet){
+  const cur=compute(c,sheet,ui.studentId);
+  const slot=document.getElementById('res-slot');if(slot) slot.innerHTML=resultHtml(c,cur);
+}
+
+app.addEventListener('keydown',e=>{
+  const t=e.target;
+  if(t.matches&&t.matches('[data-add-letter]')&&e.key==='Enter'){e.preventDefault();t.blur();return;}
+  if(t.classList&&t.classList.contains('inline-edit')&&e.key==='Enter'){e.preventDefault();t.blur();return;}
+  if(t.matches&&t.matches('[data-note-input]')&&e.key==='Enter'){e.preventDefault();const c=course();if(c&&addNote(c,ui.studentId)){ui.focusNote=true;render();}return;}
+  if(e.key==='Escape'&&ui.statusMenu){ui.statusMenu=null;render();return;}
+  if(t.classList&&t.classList.contains('course-card')&&(e.key==='Enter'||e.key===' ')){e.preventDefault();t.click();return;}
+  if(t.dataset&&t.dataset.meas&&e.key==='Enter'){
+    e.preventDefault();
+    const all=[...app.querySelectorAll('[data-meas]')];const i=all.indexOf(t);
+    if(i<all.length-1){all[i+1].focus();all[i+1].select();}
+    else{const n=app.querySelector('[data-action="next-open"]');if(n){ui.focusMeas=true;n.click();const f=app.querySelector('[data-meas]');if(f)f.focus();}}
+  }
+});
+
+app.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.matches('[data-pdf]')){const f=t.files&&t.files[0];if(f)handlePdf(f);return;}
+  if(t.matches('[data-restore]')){const f=t.files&&t.files[0];t.value='';if(f)doRestore(f);return;}
+  if(t.dataset.meas){const c=course();const sh=c.sheets.find(x=>x.id===ui.sheetId);maybeAutoAdvance(c,sh,ui.studentId,350);return;}
+  if(t.matches('[data-sheet-title]')) return;
+  if(t.matches('[data-add-letter]')){
+    const l=t.value.trim().toLowerCase();t.value='';
+    if(/^[a-zäöü]$/.test(l)&&!state.letters.includes(l)){state.letters.push(l);state.letters.sort();save();}
+    const host=t.closest('form,section');
+    const keep=[...(host?.querySelectorAll('[data-letter]:checked')||[])].map(x=>x.value);
+    const fName=host&&host.matches('form')?host.elements.name.value:'',fJg=host&&host.matches('form')?host.elements.jgst.value:'';
+    if(ui.editCourse&&t.id==='ce-new'){const c=course();if(c&&/^[a-zäöü]$/.test(l)&&!c.letters.includes(l)){c.letters.push(l);c.letters.sort();save();}}
+    render();
+    if(t.id!=='ce-new'){
+      const pre=t.id.replace(/-new$/,'');
+      keep.concat(/^[a-zäöü]$/.test(l)?[l]:[]).forEach(x=>{const cb=document.getElementById(`${pre}-${x}`);if(cb)cb.checked=true;});
+      const form=document.getElementById(pre+'-new')?.closest('form');
+      if(form){form.elements.name.value=fName;if(fJg)form.elements.jgst.value=fJg;}
+    }
+    return;
+  }
+  if(t.dataset.letter&&t.id.startsWith('ce-')){
+    const c=course();if(!c) return;
+    c.letters=t.checked?[...new Set([...c.letters,t.value])].sort():c.letters.filter(x=>x!==t.value);
+    save();render();return;
+  }
+  if(t.dataset.cfield==='jgst'){const c=course();c.jgst=Number(t.value);save();render();return;}
+  const c=course();
+  const s=c&&c.sheets.find(x=>x.id===ui.editSheetId);
+  if(s&&t.dataset.disc){
+    const k=t.dataset.disc;
+    if(t.checked){if(!s.discs.includes(k)){const order=Object.keys(tableFor(s.area,c.jgst));s.discs.push(k);s.discs.sort((a,b)=>order.indexOf(a)-order.indexOf(b));}}
+    else s.discs=s.discs.filter(x=>x!==k);
+    s.need=Math.max(1,Math.min(s.need||1,s.discs.length));
+    if(t.checked&&s.need===s.discs.length-1&&!isOber(c.jgst)) s.need=s.discs.length;
+    save();render();return;
+  }
+  if(s&&t.dataset.field){
+    const f=t.dataset.field;
+    if(f==='sheet-weight') s.weight=Number(t.value);
+    else if(f==='sheet-aa') s.aa=Number(t.value);
+    else if(f==='sheet-need') s.need=Number(t.value);
+    else if(f==='crit-weight'){const cr=s.criteria.find(x=>x.id===t.dataset.c);if(cr)cr.weight=Number(t.value);}
+    save();return;
+  }
+  if(!ui.imp||!ui.imp.rows) return;
+  if(t.dataset.imp==='format'){ui.imp.format=t.value;render();}
+  else if(t.dataset.imp==='firstonly'){ui.imp.firstOnly=t.checked;render();}
+  else if(t.dataset.impRow!==undefined){ui.imp.rows[Number(t.dataset.impRow)].checked=t.checked;render();}
+});
+
+app.addEventListener('submit',e=>{
+  e.preventDefault();
+  const form=e.target;
+  if(form.dataset.form==='new-course'){
+    const y=state.years.find(x=>x.id===form.dataset.year);if(!y) return;
+    const jg=Number(form.elements.jgst.value);state.lastJg=jg;
+    const c={id:uid(),name:'',sports:[],letters:parseLetters(form.elements.letters.value),jgst:jg,students:[],sheets:[]};
+    y.courses.push(c);save();
+    ui.courseId=c.id;ui.tab='klasse';render();window.scrollTo(0,0);
+  }
+});
+
+/* Ziehen & Ablegen von Kurskarten in Schuljahr-Ordner
+   Finger: gedrückt halten (0,35 s), dann ziehen · Maus: einfach ziehen */
+let drag=null,suppressClick=false;
+const DROP_SEL={course:'[data-drop],[data-trash]',sport:'[data-drop-course]',badge:'[data-trash]'};
+function dragSource(target){
+  if(target.closest('button,input,select,textarea,label')) return null;
+  const el=target.closest('[data-badge],[data-drag-sport],[data-drag]');if(!el) return null;
+  if(el.dataset.badge) return {kind:'badge',el,id:el.dataset.badge,cid:el.dataset.course};
+  if(el.dataset.dragSport) return {kind:'sport',el,id:el.dataset.dragSport};
+  return {kind:'course',el,id:el.dataset.drag,cid:el.dataset.drag};
+}
+function dropTargetAt(x,y){
+  const el=document.elementFromPoint(x,y);let t=el?el.closest(DROP_SEL[drag.kind]):null;
+  if(t||drag.kind!=='sport') return t;
+  const cards=[...app.querySelectorAll('[data-drop-course]')];
+  const g=drag.ghost?drag.ghost.getBoundingClientRect():null;
+  const pts=[[x,y]];if(g) pts.push([g.left+g.width/2,g.top+g.height/2]);
+  for(const [px,py] of pts){const hit=cards.find(c=>{const r=c.getBoundingClientRect();return px>=r.left&&px<=r.right&&py>=r.top&&py<=r.bottom;});if(hit) return hit;}
+  let best=null,bd=48;
+  cards.forEach(c=>{const r=c.getBoundingClientRect();const dx=Math.max(r.left-x,0,x-r.right),dy=Math.max(r.top-y,0,y-r.bottom);const d=Math.hypot(dx,dy);if(d<bd){bd=d;best=c;}});
+  return best;
+}
+function beginDrag(){
+  cleanupDragArtifacts();
+  if(!drag.el.isConnected){drag=null;return;}
+  const r=drag.el.getBoundingClientRect();
+  drag.offX=drag.x-r.left;drag.offY=drag.y-r.top;
+  const g=drag.el.cloneNode(true);g.classList.remove('pop');g.classList.add('drag-ghost','ghost-'+drag.kind);
+  document.body.classList.add('is-dragging');
+  ['data-drag','data-drop-course','data-badge','data-drag-sport','data-action'].forEach(a=>g.removeAttribute(a));
+  g.style.width=r.width+'px';g.style.left=r.left+'px';g.style.top=r.top+'px';
+  document.body.appendChild(g);drag.ghost=g;drag.el.classList.add('dragging');drag.active=true;
+  if(drag.kind!=='sport'){
+    const tz=document.createElement('div');tz.className='trash-zone';tz.dataset.trash='1';
+    tz.innerHTML=ic('trash')+`<span>${drag.kind==='badge'?'Sportart entfernen':'Zum Löschen hierher ziehen'}</span>`;
+    document.body.appendChild(tz);drag.trash=tz;
+  }
+  try{navigator.vibrate&&navigator.vibrate(12);}catch(e){}
+  const tick=()=>{if(!drag||!drag.active)return;
+    const edge=70;let dy=0;
+    if(drag.y<edge) dy=-Math.ceil((edge-drag.y)/6); else if(drag.y>innerHeight-edge) dy=Math.ceil((drag.y-(innerHeight-edge))/6);
+    if(dy){window.scrollBy(0,dy);markTarget();}
+    requestAnimationFrame(tick);};
+  requestAnimationFrame(tick);
+}
+function markTarget(){
+  const t=dropTargetAt(drag.x,drag.y);
+  document.querySelectorAll('.drop').forEach(el=>{if(el!==t)el.classList.remove('drop');});
+  if(t) t.classList.add('drop');drag.target=t;
+}
+function moveDragTo(x,y){drag.x=x;drag.y=y;drag.ghost.style.left=(x-drag.offX)+'px';drag.ghost.style.top=(y-drag.offY)+'px';markTarget();}
+function finishDrag(cancel){
+  const d=drag;drag=null;if(!d) return false;clearTimeout(d.timer);
+  detachSourceListeners(d);
+  if(!d.active) return false;
+  if(d.ghost)d.ghost.remove();if(d.trash)d.trash.remove();
+  cleanupDragArtifacts();
+  const t=cancel?null:d.target;
+  if(cancel){render();return true;}
+  if(d.kind==='course'){
+    if(t&&t.dataset.trash) deleteWithUndo('course:'+d.cid);
+    else if(t) moveCourse(d.cid,t.dataset.drop);
+  } else if(d.kind==='sport'){
+    const c=t&&allCourses().find(x=>x.id===t.dataset.dropCourse);
+    if(!c) flash('Nicht auf einer Klasse abgelegt');
+    else if(classSports(c).includes(d.id)) flash(`${SPORT_LABEL[d.id]} ist bei ${cName(c)} schon dabei`);
+    else{c.sports.push(d.id);save();ui.justAdded={cid:c.id,k:d.id};flash(`${SPORT_LABEL[d.id]} → ${cName(c)}`);}
+  } else if(d.kind==='badge'&&t&&t.dataset.trash){
+    deleteWithUndo('sport:'+d.cid+':'+d.id);
+  }
+  render();return true;
+}
+function detachSourceListeners(d){
+  if(d&&d.srcNode&&d.handlers){d.srcNode.removeEventListener('touchmove',d.handlers.move);d.srcNode.removeEventListener('touchend',d.handlers.end);d.srcNode.removeEventListener('touchcancel',d.handlers.cancel);}
+}
+app.addEventListener('touchstart',e=>{
+  // eine hängengebliebene Ziehaktion wird bei jeder neuen Berührung abgebrochen
+  if(drag&&drag.active){finishDrag(true);}
+  else if(drag){clearTimeout(drag.timer);detachSourceListeners(drag);drag=null;}
+  cleanupDragArtifacts();
+  if(e.touches.length>1) return;
+  const src=dragSource(e.target);if(!src) return;
+  const t=e.touches[0];
+  drag={...src,x:t.clientX,y:t.clientY,sx:t.clientX,sy:t.clientY,active:false,touch:true,srcNode:e.target};
+  drag.handlers={move:onTouchMove,end:onTouchEnd,cancel:onTouchCancel};
+  e.target.addEventListener('touchmove',onTouchMove,{passive:false});
+  e.target.addEventListener('touchend',onTouchEnd);
+  e.target.addEventListener('touchcancel',onTouchCancel);
+  drag.timer=setTimeout(()=>{if(drag&&!drag.active)beginDrag();},350);
+},{passive:true,capture:true});
+function onTouchEnd(e){if(drag&&drag.touch){if(finishDrag())e.preventDefault();}}
+function onTouchCancel(){if(drag&&drag.touch){finishDrag(true);}}
+function onTouchMove(e){
+  if(!drag||!drag.touch||e._sn) return;e._sn=true;
+  const t=e.touches[0];
+  if(!drag.active){
+    const dx=t.clientX-drag.sx,dy=t.clientY-drag.sy;
+    if(Math.hypot(dx,dy)<=8) return;
+    // Sportart aus der Leiste: nach unten/oben ziehen startet sofort, seitlich scrollt die Leiste
+    if(drag.kind==='sport'&&Math.abs(dy)>Math.abs(dx)){clearTimeout(drag.timer);beginDrag();}
+    else{clearTimeout(drag.timer);drag=null;return;}
+  }
+  if(!drag||!drag.active) return;
+  e.preventDefault();moveDragTo(t.clientX,t.clientY);
+}
+document.addEventListener('touchmove',onTouchMove,{passive:false});
+document.addEventListener('touchend',onTouchEnd);
+document.addEventListener('touchcancel',onTouchCancel);
+/* Sicherheitsnetz: App verlassen oder Mausziehen abgebrochen → Ziehen beenden */
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&drag)finishDrag(true);});
+window.addEventListener('blur',()=>{if(drag)finishDrag(true);});
+document.addEventListener('pointercancel',e=>{if(drag&&!drag.touch)finishDrag(true);});
+app.addEventListener('pointerdown',e=>{
+  suppressClick=false;
+  if(e.pointerType!=='mouse'||e.button!==0) return;
+  const src=dragSource(e.target);if(!src) return;
+  drag={...src,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,active:false,touch:false};
+});
+document.addEventListener('pointermove',e=>{
+  if(!drag||drag.touch) return;
+  if(!drag.active){if(Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<6)return;drag.x=e.clientX;drag.y=e.clientY;beginDrag();}
+  moveDragTo(e.clientX,e.clientY);
+});
+document.addEventListener('pointerup',()=>{if(drag&&!drag.touch){if(finishDrag()){suppressClick=true;setTimeout(()=>{suppressClick=false;},60);}else drag=null;}});
+app.addEventListener('contextmenu',e=>{
+  if(e.target.closest('[data-drag],[data-drag-sport],[data-badge]'))e.preventDefault();
+  const st=e.target.closest('[data-stu]');
+  if(st){e.preventDefault();openStatusMenu(st.dataset.stu,e.clientX,e.clientY);}
+});
+/* Gedrückthalten auf einen Namen: Menü Fehlt / Befreit (ohne Neuaufbau, damit der Finger-Vorgang intakt bleibt) */
+function openStatusMenu(sid,x,y){
+  ui.statusMenu={sid,x,y};ui.menuAt=Date.now();
+  const old=app.querySelector('.status-menu');if(old)old.remove();
+  app.insertAdjacentHTML('beforeend',statusMenuHtml());
+}
+let press=null;
+app.addEventListener('touchstart',e=>{
+  const st=e.target.closest('[data-stu]');if(!st||e.touches.length>1) return;
+  const t=e.touches[0];
+  press={sid:st.dataset.stu,x:t.clientX,y:t.clientY,fired:false};
+  press.timer=setTimeout(()=>{if(!press)return;press.fired=true;try{navigator.vibrate&&navigator.vibrate(12);}catch(_){}openStatusMenu(press.sid,press.x,press.y);},500);
+},{passive:true});
+app.addEventListener('touchmove',e=>{if(!press)return;const t=e.touches[0];if(Math.hypot(t.clientX-press.x,t.clientY-press.y)>8){clearTimeout(press.timer);press=null;}},{passive:true});
+app.addEventListener('touchend',e=>{if(!press)return;clearTimeout(press.timer);if(press.fired)e.preventDefault();press=null;});
+/* Wischen im Bewertungsfeld: links = nächste Person, rechts = vorherige */
+let swipe=null;
+app.addEventListener('touchstart',e=>{const p=e.target.closest('[data-swipe]');if(!p||e.touches.length>1||e.target.closest('details'))return;const t=e.touches[0];swipe={x:t.clientX,y:t.clientY,t:Date.now()};},{passive:true});
+app.addEventListener('touchend',e=>{
+  if(!swipe) return;const t=e.changedTouches[0];const dx=t.clientX-swipe.x,dy=t.clientY-swipe.y,dt=Date.now()-swipe.t;swipe=null;
+  if(Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*0.6||dt>700) return;
+  const c=course();if(!c) return;
+  if(document.activeElement&&document.activeElement.blur) document.activeElement.blur();
+  goStep(c,dx<0?1:-1);ui.focusMeas=false;render();
+});
+
+render();
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
+})();
+</script>
+</body>
+</html>
