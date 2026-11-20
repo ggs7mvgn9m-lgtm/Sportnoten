@@ -391,6 +391,16 @@ th{text-transform:none;letter-spacing:0;font-weight:500;font-size:.9rem}
 .stu .val{font-weight:500}
 td .tag{font-weight:500}
 
+#file-drop{position:fixed;inset:12px;z-index:80;border:3px dashed var(--accent);border-radius:20px;background:color-mix(in srgb,var(--bg) 88%,transparent);display:grid;place-content:center;justify-items:center;gap:8px;text-align:center;color:var(--accent);pointer-events:none;padding:24px}
+#file-drop .ic{width:56px;height:56px}
+#file-drop strong{font-size:1.4rem;font-weight:500;color:var(--ink)}
+#file-drop span{color:var(--muted)}
+@keyframes justadded{0%{box-shadow:0 0 0 0 var(--accent)}100%{box-shadow:0 0 0 10px transparent}}
+.course-card.just-added{border-color:var(--accent);animation:justadded 1.2s ease-out 2}
+.filebtn-plain{position:relative;cursor:pointer;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.filebtn-plain input{position:absolute;inset:0;opacity:0;width:100%;height:100%;min-height:0;cursor:pointer}
+.newcourse .filebtn-plain{min-width:48px;display:inline-flex;align-items:center;justify-content:center;color:var(--accent)}
+
 .backup{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 .backup-info{display:grid;gap:2px}
 .backup-info strong{font-weight:500}
@@ -816,7 +826,7 @@ function homeView(){
   const years=[...state.years].sort((a,b)=>b.name.localeCompare(a.name,'de',{numeric:true}));
   const folders=years.map(y=>{
     const cards=sortCourses(y.courses).map(c=>`
-      <article class="card course-card" data-action="open-course" data-id="${c.id}" data-drag="${c.id}" data-drop-course="${c.id}" role="button" tabindex="0" aria-label="${esc(cName(c))} öffnen">
+      <article class="card course-card ${ui.justAddedCourse===c.id?'just-added':''}" data-action="open-course" data-id="${c.id}" data-drag="${c.id}" data-drop-course="${c.id}" role="button" tabindex="0" aria-label="${esc(cName(c))} öffnen">
         <div class="cc-main">
           <h2>${esc(cName(c))}</h2>
           <div class="badges">${classSports(c).filter(k=>k!=='misc').map(k=>`<span class="badge ${ui.justAdded&&ui.justAdded.cid===c.id&&ui.justAdded.k===k?'pop':''}" data-badge="${k}" data-course="${c.id}" title="${esc(SPORT_LABEL[k])}">${ic(sportIcon(k))}</span>`).join('')||'<span class="hint small-hint">Sportart hierher ziehen</span>'}</div>
@@ -835,6 +845,7 @@ function homeView(){
           <label for="nj-${y.id}" class="nc-jg"><span class="sr">Jahrgangsstufe</span>${jgShort('nj-'+y.id,'jgst',state.lastJg||5)}</label>
           <label for="nl-${y.id}" class="nc-let"><span class="sr">Klassenbuchstaben</span><input id="nl-${y.id}" name="letters" placeholder="Buchstaben, z. B. cd" maxlength="4" autocapitalize="none" autocomplete="off" spellcheck="false"></label>
           <button class="icon-btn primary" type="submit" title="Klasse anlegen" aria-label="Klasse anlegen">${ic('plus')}</button>
+          <label class="icon-btn filebtn-plain" title="Klassenlisten (PDF) einlesen – Klasse wird automatisch erkannt" for="cpdf-${y.id}">${ic('fileUp')}<span class="sr">Klassenlisten als PDF einlesen</span><input id="cpdf-${y.id}" type="file" accept="application/pdf,.pdf" multiple data-class-pdf></label>
         </form>
         ${y.courses.length?'':`<div class="row" style="justify-content:flex-end">${confirmBtn('year:'+y.id,'Leeres Schuljahr löschen')}</div>`}
       </div>`:''}
@@ -857,7 +868,7 @@ function homeView(){
         <label class="icon-btn filebtn-plain" title="Sicherung laden" for="restore-in">${ic('restore')}<span class="sr">Sicherung laden</span><input id="restore-in" type="file" accept="application/json,.json" data-restore></label>
       </div>
     </section>
-    ${allCourses().length?'<p class="hint">Sportart oben auf eine Klasse ziehen. Klasse oder Sportart-Symbol gedrückt halten und ziehen: in ein anderes Schuljahr verschieben oder in den Papierkorb.</p>':''}
+    ${allCourses().length?'<p class="hint">PDF-Klassenlisten einfach auf diese Seite ziehen: Die Klasse wird erkannt und mit allen Schülern angelegt. Sportart oben auf eine Klasse ziehen. Klasse oder Sportart-Symbol gedrückt halten und ziehen: in ein anderes Schuljahr verschieben oder in den Papierkorb.</p>':''}
   </div>`;
 }
 
@@ -1350,6 +1361,56 @@ function fmtName(r,format,firstOnly){
   }
   return `${first} ${r.last}`;
 }
+/* Klasse (z. B. 6b, 7cd, Q12) aus Text oder Dateiname erkennen */
+function detectClass(lines,fileName){
+  const head=lines.slice(0,12).map(l=>joinItems(l.items)).join('\n');
+  const all=lines.map(l=>joinItems(l.items)).join('\n');
+  const mk=(jg,let_)=>{jg=Number(jg);if(!(jg>=5&&jg<=13))return null;return {jgst:jg,letters:parseLetters(jg>=12?'':(let_||''))};};
+  let m=(head+'\n'+all).match(/Klass(?:e|enliste)\s*:?\s*(\d{1,2})\s?([a-zäöü]{1,4})\b/i);
+  if(m) return mk(m[1],m[2]);
+  m=(head+'\n'+all).match(/\bQ\s?(1[23])\b|Jahrgangsstufe\s*(1[23])\b/i);
+  if(m) return mk(m[1]||m[2],'');
+  m=head.match(/(?:^|[\s(])(1[01]|[5-9])([a-zäöü]{1,3})(?=[\s),.:–-]|$)/m);
+  if(m) return mk(m[1],m[2]);
+  m=String(fileName||'').match(/(?:^|[_\-\s])(1[0-3]|[5-9])([a-z]{1,3})(?=[_\-\s.]|$)/i);
+  if(m) return mk(m[1],m[2]);
+  m=(head+'\n'+all).match(/(?:Kurs|Klasse|Jgst\.?)\s*(1[0-3]|[5-9])\b/i);
+  if(m) return mk(m[1],'');
+  return null;
+}
+async function importClassPdfs(files){
+  const pdfs=[...files].filter(f=>/\.pdf$/i.test(f.name)||f.type==='application/pdf');
+  if(!pdfs.length){flash('Bitte PDF-Dateien ablegen');render();return;}
+  flash(pdfs.length>1?`Lese ${pdfs.length} PDFs …`:'Lese PDF …');render();
+  const snap=JSON.stringify(state);
+  const cur=currentSY();let y=state.years.find(x=>x.name===cur);
+  if(!y){y={id:uid(),name:cur,open:true,courses:[]};state.years.push(y);}
+  const done=[],failed=[];
+  for(const f of pdfs){
+    try{
+      const lines=await pdfLines(f);
+      const cls=lines.length?detectClass(lines,f.name):null;
+      const rows=lines.length?extractNames(lines).rows:[];
+      if(!cls||!rows.length){failed.push(f.name);continue;}
+      let c=y.courses.find(x=>x.jgst===cls.jgst&&(x.letters||[]).join('')===cls.letters.join(''));
+      if(!c){c={id:uid(),name:'',sports:[],letters:cls.letters,jgst:cls.jgst,students:[],sheets:[]};y.courses.push(c);}
+      const have=new Set(c.students.map(st=>st.name.toLowerCase()));let n=0;
+      rows.forEach(r=>{const name=fmtName(r,'first-last',false);if(have.has(name.toLowerCase()))return;have.add(name.toLowerCase());c.students.push({id:uid(),name});n++;});
+      done.push(n?`${n} Schüler → ${cName(c)}`:`${cName(c)}: schon vollständig`);ui.justAddedCourse=c.id;
+    }catch(e){failed.push(f.name);}
+  }
+  y.open=true;
+  if(done.length){
+    save();
+    ui.undo={snap,text:done.join(' · ')+(failed.length?` · nicht erkannt: ${failed.length}`:'')};
+    clearTimeout(undoTimer);undoTimer=setTimeout(()=>{ui.undo=null;ui.justAddedCourse=null;render();},9000);
+    ui.flash=null;
+  } else {
+    state=JSON.parse(snap);
+    flash(failed.length>1?'In keinem PDF wurde eine Klasse mit Namensliste erkannt':'Klasse oder Namen im PDF nicht erkannt – lege die Klasse an und lies das PDF unter „Klasse“ ein');
+  }
+  render();
+}
 async function handlePdf(file){
   ui.imp={loading:true,fileName:file.name};ui.toast=null;render();
   try{
@@ -1588,6 +1649,7 @@ app.addEventListener('change',e=>{
   const t=e.target;
   if(t.matches('[data-pdf]')){const f=t.files&&t.files[0];if(f)handlePdf(f);return;}
   if(t.matches('[data-restore]')){const f=t.files&&t.files[0];t.value='';if(f)doRestore(f);return;}
+  if(t.matches('[data-class-pdf]')){const fs=[...(t.files||[])];t.value='';if(fs.length)importClassPdfs(fs);return;}
   if(t.dataset.meas){const c=course();const sh=c.sheets.find(x=>x.id===ui.sheetId);maybeAutoAdvance(c,sh,ui.studentId,350);return;}
   if(t.matches('[data-sheet-title]')) return;
   if(t.matches('[data-add-letter]')){
@@ -1648,6 +1710,23 @@ app.addEventListener('submit',e=>{
   }
 });
 
+/* PDF-Dateien aus Finder/Dateien auf die Seite ziehen */
+let fileDragDepth=0;
+const hasFiles=e=>e.dataTransfer&&[...(e.dataTransfer.types||[])].includes('Files');
+function fileOverlay(on){
+  let o=document.getElementById('file-drop');
+  if(on&&!o){o=document.createElement('div');o.id='file-drop';o.innerHTML=ic('fileUp')+'<strong>PDF-Klassenlisten hier ablegen</strong><span>Klasse wird erkannt und mit allen Schülern angelegt</span>';document.body.appendChild(o);}
+  if(!on&&o) o.remove();
+}
+window.addEventListener('dragenter',e=>{if(!hasFiles(e))return;e.preventDefault();fileDragDepth++;fileOverlay(true);});
+window.addEventListener('dragover',e=>{if(!hasFiles(e))return;e.preventDefault();e.dataTransfer.dropEffect='copy';});
+window.addEventListener('dragleave',e=>{if(!hasFiles(e))return;fileDragDepth=Math.max(0,fileDragDepth-1);if(!fileDragDepth)fileOverlay(false);});
+window.addEventListener('drop',e=>{
+  if(!hasFiles(e))return;e.preventDefault();fileDragDepth=0;fileOverlay(false);
+  const fs=[...(e.dataTransfer.files||[])];if(!fs.length)return;
+  ui.courseId=null;ui.editSheetId=null;ui.imp=null;
+  importClassPdfs(fs);
+});
 /* Ziehen & Ablegen von Kurskarten in Schuljahr-Ordner
    Finger: gedrückt halten (0,35 s), dann ziehen · Maus: einfach ziehen */
 let drag=null,suppressClick=false;
